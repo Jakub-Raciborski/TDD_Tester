@@ -28,7 +28,7 @@ assert get_full_software_version(1, 2.0, 3, 4) == ""0""
 assert get_full_software_version(1, 2, 3.0, 4) == ""0""
 assert get_full_software_version(1, 2, 3, 4.0) == ""0""
 assert get_full_software_version(True, 2, 3, 4) == ""0""
-assert get_full_software_version(1, False, 3, 4) == ""0""",25,100.0,83.33,100.0,100.0,75.0,3,1,CRP,"assert get_full_software_version(1, 2, 3, 4) == ""1.2.3.4""
+assert get_full_software_version(1, False, 3, 4) == ""0""",25,100.0,83.33,100.0,100.0,100.0,3,0,,"assert get_full_software_version(1, 2, 3, 4) == ""1.2.3.4""
 assert get_full_software_version(0, 0, 0, 0) == ""0.0.0.0""
 assert get_full_software_version(10, 255, 0, 1) == ""10.255.0.1""
 assert get_full_software_version(-1, 2, 3, 4) == ""0""
@@ -39,10 +39,10 @@ assert get_full_software_version(""1"", 2, 3, 4) == ""0""
 assert get_full_software_version(1, None, 3, 4) == ""0""
 assert get_full_software_version(1, 2, """", 4) == ""0""
 assert get_full_software_version(1.5, 2, 3, 4) == ""0""
-assert get_full_software_version(True, 2, 3, 4) == ""0""",12,100.0,83.33,100.0,100.0,75.0,3,1,CRP,,0,0.0,0,0,0,0,0,0,,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'",1,33.33,66.67,50.0,50.0,25.0,1,3,CRP;LCR;ROR,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'
-assert get_full_software_version(0, 0, 0, 0) == '0.0.0.0'",2,100.0,66.67,50.0,50.0,50.0,2,2,CRP;LCR,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'
+assert get_full_software_version(True, 2, 3, 4) == ""0""",12,100.0,83.33,100.0,100.0,100.0,3,0,,,0,0.0,0,0,0,0,0,0,,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'",1,33.33,66.67,50.0,50.0,33.33,1,2,LCR;ROR,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'
+assert get_full_software_version(0, 0, 0, 0) == '0.0.0.0'",2,100.0,66.67,50.0,50.0,66.67,2,1,LCR,"assert get_full_software_version(1, 2, 3, 4) == '1.2.3.4'
 assert get_full_software_version(0, 0, 0, 0) == '0.0.0.0'
-assert get_full_software_version(1, '2', 3, 4) == '0'",3,100.0,83.33,100.0,100.0,75.0,3,1,CRP
+assert get_full_software_version(1, '2', 3, 4) == '0'",3,100.0,83.33,100.0,100.0,100.0,3,0,
 "def is_triangle(a, b, c) -> bool:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in (a, b, c)):
@@ -79,7 +79,7 @@ assert is_triangle(3, float(""inf""), 5) is False
 assert is_triangle(3, 4, float(""inf"")) is False
 assert is_triangle(float(""nan""), 4, 5) is False
 assert is_triangle(3, float(""nan""), 5) is False
-assert is_triangle(3, 4, float(""nan"")) is False",28,100.0,100.0,100.0,100.0,69.57,16,7,ROR;LCR;CRP,"assert is_triangle(3, 4, 5) is True
+assert is_triangle(3, 4, float(""nan"")) is False",28,100.0,100.0,100.0,100.0,64.71,11,6,LCR;ROR;AOR,"assert is_triangle(3, 4, 5) is True
 assert is_triangle(5, 5, 5) is True
 assert is_triangle(10, 2, 2) is False
 assert is_triangle(3, 4, 7) is False
@@ -90,14 +90,14 @@ assert is_triangle(3, float('nan'), 5) is False
 assert is_triangle(""3"", 4, 5) is False
 assert is_triangle(3, None, 5) is False
 assert is_triangle(3, 4, """") is False
-assert is_triangle(1.5, 2.5, 3.5) is True",12,100.0,100.0,100.0,100.0,69.57,16,7,ROR;LCR;CRP,"assert is_triangle(1, 1, 1) == True
-assert is_triangle(1, 2, 2) == True",2,40.0,70.0,50.0,50.0,30.43,7,16,ROR;AOR;BLR;LCR;CRP,"assert is_triangle(3, 4, 5) == True
-assert is_triangle(1, 2, 3) == False",2,100.0,80.0,66.67,66.67,43.48,10,13,ROR;BLR;LCR;CRP,"assert is_triangle(3, 4, 5) == True
+assert is_triangle(1.5, 2.5, 3.5) is True",12,100.0,100.0,100.0,100.0,64.71,11,6,LCR;ROR;AOR,"assert is_triangle(1, 1, 1) == True
+assert is_triangle(1, 2, 2) == True",2,40.0,70.0,50.0,50.0,29.41,5,12,BLR;LCR;ROR;AOR,"assert is_triangle(3, 4, 5) == True
+assert is_triangle(1, 2, 3) == False",2,100.0,80.0,66.67,66.67,47.06,8,9,BLR;LCR;ROR;AOR,"assert is_triangle(3, 4, 5) == True
 assert is_triangle(1, 2, 3) == False
-assert is_triangle(1, 2, 3) is False",3,100.0,80.0,66.67,66.67,47.83,11,12,ROR;BLR;LCR;CRP,"assert is_triangle(3, 4, 5) == True
+assert is_triangle(1, 2, 3) is False",3,100.0,80.0,66.67,66.67,47.06,8,9,BLR;LCR;ROR;AOR,"assert is_triangle(3, 4, 5) == True
 assert is_triangle(1, 2, 3) == False
 assert is_triangle(-1, -2, 3) == False
-assert is_triangle(-1, 2, 3) == False",4,100.0,90.0,83.33,83.33,47.83,11,12,ROR;BLR;LCR;CRP
+assert is_triangle(-1, 2, 3) == False",4,100.0,90.0,83.33,83.33,52.94,9,8,BLR;LCR;ROR;AOR
 "def calc_triangle_area(a, b, c) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in (a, b, c)):
@@ -136,7 +136,7 @@ assert calc_triangle_area(3, float(""inf""), 5) == 0
 assert calc_triangle_area(3, 4, float(""inf"")) == 0
 assert calc_triangle_area(float(""nan""), 4, 5) == 0
 assert calc_triangle_area(3, float(""nan""), 5) == 0
-assert calc_triangle_area(3, 4, float(""nan"")) == 0",28,93.33,100.0,100.0,100.0,62.07,18,11,LCR;ROR;CRP,"assert calc_triangle_area(3, 4, 5) == 6.0
+assert calc_triangle_area(3, 4, float(""nan"")) == 0",28,93.33,100.0,100.0,100.0,69.57,16,7,LCR;AOR;ROR,"assert calc_triangle_area(3, 4, 5) == 6.0
 assert calc_triangle_area(7, 10, 5) == 16.25
 assert calc_triangle_area(5, 5, 5) == 10.83
 assert calc_triangle_area(10, 2, 2) == 0
@@ -147,12 +147,12 @@ assert calc_triangle_area(float('inf'), 4, 5) == 0
 assert calc_triangle_area(3, float('nan'), 5) == 0
 assert calc_triangle_area(""3"", 4, 5) == 0
 assert calc_triangle_area(3, None, 5) == 0
-assert calc_triangle_area(3, 4, """") == 0",12,100.0,100.0,100.0,100.0,62.07,18,11,LCR;ROR;CRP,"assert calc_triangle_area(1, 2, 5) == 0.0
-assert calc_triangle_area(1, 2, 3) == 0.0",2,40.0,58.33,50.0,50.0,17.24,5,24,LCR;CRP;ROR;NEG;AOR,"assert calc_triangle_area(3, 4, 5) == 6",1,100.0,75.0,50.0,50.0,55.17,16,13,LCR;ROR;CRP,"assert calc_triangle_area(3, 4, 5) == 6
+assert calc_triangle_area(3, 4, """") == 0",12,100.0,100.0,100.0,100.0,69.57,16,7,LCR;AOR;ROR,"assert calc_triangle_area(1, 2, 5) == 0.0
+assert calc_triangle_area(1, 2, 3) == 0.0",2,40.0,58.33,50.0,50.0,8.7,2,21,NEG;AOR;CRP;ROR;LCR,"assert calc_triangle_area(3, 4, 5) == 6",1,100.0,75.0,50.0,50.0,43.48,10,13,LCR;AOR;ROR;CRP,"assert calc_triangle_area(3, 4, 5) == 6
 assert calc_triangle_area(1, 2, 3) == 0
-assert calc_triangle_area(1, 2, 5) == 0",3,100.0,83.33,66.67,66.67,55.17,16,13,LCR;ROR;CRP,"assert calc_triangle_area(3, 4, 5) == 6
+assert calc_triangle_area(1, 2, 5) == 0",3,100.0,83.33,66.67,66.67,47.83,11,12,LCR;AOR;ROR;CRP,"assert calc_triangle_area(3, 4, 5) == 6
 assert calc_triangle_area(-3, 1, 100) == 0
-assert calc_triangle_area(15, 14, 13) == 84",3,100.0,83.33,66.67,66.67,55.17,16,13,LCR;ROR;CRP
+assert calc_triangle_area(15, 14, 13) == 84",3,100.0,83.33,66.67,66.67,56.52,13,10,LCR;AOR;ROR;CRP
 "def count_occurrences_in_text(text: str, count_in_text) -> int:
     import numbers
     if not count_in_text or not isinstance(text, str):
@@ -182,7 +182,7 @@ assert count_occurrences_in_text(""short"", ""longsubstring"") == 0
 assert count_occurrences_in_text(""CaseSensitive"", ""case"") == 0
 assert count_occurrences_in_text(""CaseSensitive"", ""Case"") == 1
 assert count_occurrences_in_text(""   "", "" "") == 3
-assert count_occurrences_in_text(""line1\nline2\nline3"", ""\n"") == 2",23,95.83,87.5,75.0,75.0,60.0,3,2,CRP,"assert count_occurrences_in_text(""hello world, hello again"", ""hello"") == 2
+assert count_occurrences_in_text(""line1\nline2\nline3"", ""\n"") == 2",23,95.83,87.5,75.0,75.0,100.0,3,0,,"assert count_occurrences_in_text(""hello world, hello again"", ""hello"") == 2
 assert count_occurrences_in_text(""banana"", ""ana"") == 1
 assert count_occurrences_in_text(""aaaaa"", ""aa"") == 2
 assert count_occurrences_in_text(""The year is 2024, not 2025"", 2024) == 1
@@ -194,14 +194,14 @@ assert count_occurrences_in_text(""test"", None) == 0
 assert count_occurrences_in_text(12345, 2) == 0
 assert count_occurrences_in_text(""case sensitive"", ""Case"") == 0
 assert count_occurrences_in_text(""special characters !!!"", ""!"") == 3
-assert count_occurrences_in_text(""12.34 12.34"", 12.34) == 2",13,100.0,87.5,75.0,75.0,60.0,3,2,CRP,"assert count_occurrences_in_text('', 3) == 0
+assert count_occurrences_in_text(""12.34 12.34"", 12.34) == 2",13,100.0,87.5,75.0,75.0,100.0,3,0,,"assert count_occurrences_in_text('', 3) == 0
 assert count_occurrences_in_text('', 1) == 0
-assert count_occurrences_in_text('', 0) == 0",3,100.0,87.5,75.0,75.0,0.0,0,5,NEG;LCR;CRP,"assert count_occurrences_in_text('banana', 'na') == 2",1,100.0,75.0,50.0,50.0,40.0,2,3,LCR;CRP,"assert count_occurrences_in_text('banana', 'na') == 2
+assert count_occurrences_in_text('', 0) == 0",3,100.0,87.5,75.0,75.0,0.0,0,3,NEG;LCR,"assert count_occurrences_in_text('banana', 'na') == 2",1,100.0,75.0,50.0,50.0,66.67,2,1,LCR,"assert count_occurrences_in_text('banana', 'na') == 2
 assert count_occurrences_in_text('Terefere terefere', 're') == 4
-assert count_occurrences_in_text('', 'a') == 0",3,100.0,75.0,50.0,50.0,40.0,2,3,LCR;CRP,"assert count_occurrences_in_text('banana', 'na') == 2
+assert count_occurrences_in_text('', 'a') == 0",3,100.0,75.0,50.0,50.0,66.67,2,1,LCR,"assert count_occurrences_in_text('banana', 'na') == 2
 assert count_occurrences_in_text('Terefere terefere', 're') == 4
 assert count_occurrences_in_text('5 + 5 = 10', 5) == 2
-assert count_occurrences_in_text('1 + 1 = 2', 1) == 2",4,80.0,75.0,50.0,50.0,40.0,2,3,LCR;CRP
+assert count_occurrences_in_text('1 + 1 = 2', 1) == 2",4,80.0,75.0,50.0,50.0,66.67,2,1,LCR
 "def count_chars_manual(text) -> dict:
     import numbers
     if not isinstance(text, (numbers.Number, str)) or isinstance(text, bool):
@@ -233,7 +233,7 @@ assert count_chars_manual([]) == {}
 assert count_chars_manual({}) == {}
 assert count_chars_manual((""a"", ""b"")) == {}
 assert count_chars_manual(""!@!"") == {""!"": 2, ""@"": 1}
-assert count_chars_manual(""\n\n"") == {""\n"": 2}",23,100.0,90.0,100.0,100.0,80.0,4,1,CRP,"assert count_chars_manual(""hello"") == {'h': 1, 'e': 1, 'l': 2, 'o': 1}
+assert count_chars_manual(""\n\n"") == {""\n"": 2}",23,100.0,90.0,100.0,100.0,100.0,4,0,,"assert count_chars_manual(""hello"") == {'h': 1, 'e': 1, 'l': 2, 'o': 1}
 assert count_chars_manual(121) == {'1': 2, '2': 1}
 assert count_chars_manual(12.12) == {'1': 2, '2': 2, '.': 1}
 assert count_chars_manual("""") == {}
@@ -244,13 +244,13 @@ assert count_chars_manual([]) == {}
 assert count_chars_manual(""a b a"") == {'a': 2, ' ': 2, 'b': 1}
 assert count_chars_manual(""!!!"") == {'!': 3}
 assert count_chars_manual(0) == {'0': 1}
-assert count_chars_manual(-15) == {'-': 1, '1': 1, '5': 1}",12,100.0,90.0,100.0,100.0,80.0,4,1,CRP,"assert count_chars_manual('') == {}
-assert count_chars_manual('a') == {'a': 1}",2,66.67,80.0,75.0,75.0,60.0,3,2,CRP;LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}",1,25.0,80.0,50.0,50.0,60.0,3,2,CRP;LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}
+assert count_chars_manual(-15) == {'-': 1, '1': 1, '5': 1}",12,100.0,90.0,100.0,100.0,100.0,4,0,,"assert count_chars_manual('') == {}
+assert count_chars_manual('a') == {'a': 1}",2,66.67,80.0,75.0,75.0,75.0,3,1,LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}",1,25.0,80.0,50.0,50.0,75.0,3,1,LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}
 assert count_chars_manual('') == {}
-assert count_chars_manual('Trala lala da') == {' ': 2, 'T': 1, 'a': 5, 'l': 3, 'd': 1, 'r': 1}",3,75.0,80.0,75.0,75.0,60.0,3,2,CRP;LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}
+assert count_chars_manual('Trala lala da') == {' ': 2, 'T': 1, 'a': 5, 'l': 3, 'd': 1, 'r': 1}",3,75.0,80.0,75.0,75.0,75.0,3,1,LCR,"assert count_chars_manual(1500.15) == {'1': 2, '5': 2, '0': 2, '.': 1}
 assert count_chars_manual('') == {}
 assert count_chars_manual('Trala lala da') == {' ': 2, 'T': 1, 'a': 5, 'l': 3, 'd': 1, 'r': 1}
-assert count_chars_manual(False) == {}",4,80.0,90.0,100.0,100.0,80.0,4,1,CRP
+assert count_chars_manual(False) == {}",4,80.0,90.0,100.0,100.0,100.0,4,0,
 "def validate_pesel(pesel: str) -> bool:
     import datetime
     if not isinstance(pesel, str):
@@ -306,7 +306,7 @@ assert validate_pesel([]) is False
 assert validate_pesel({}) is False
 assert validate_pesel(""99022912349"") is False
 assert validate_pesel(""00233212349"") is False
-assert validate_pesel(""00210012349"") is False",23,92.0,79.41,78.57,78.57,50.0,41,41,NEG;ROR;CRP,"assert validate_pesel(""44051401359"") is True
+assert validate_pesel(""00210012349"") is False",23,92.0,79.41,78.57,78.57,46.75,36,41,ROR;CRP;AOR;NEG,"assert validate_pesel(""44051401359"") is True
 assert validate_pesel(""02270803624"") is True
 assert validate_pesel(""81022903419"") is False
 assert validate_pesel(""44051401350"") is False
@@ -316,16 +316,16 @@ assert validate_pesel(""A4051401359"") is False
 assert validate_pesel("""") is False
 assert validate_pesel(None) is False
 assert validate_pesel(44051401359) is False
-assert validate_pesel(""00000000000"") is False",11,84.62,79.41,78.57,78.57,54.88,45,37,NEG;ROR;CRP,"assert validate_pesel('1900–1999') == False
+assert validate_pesel(""00000000000"") is False",11,84.62,79.41,78.57,78.57,51.95,40,37,ROR;CRP;AOR;NEG,"assert validate_pesel('1900–1999') == False
 assert validate_pesel('1999') == False
-assert validate_pesel('12345345345') == False",3,60.0,44.12,57.14,57.14,10.98,9,73,NEG;BLR;CRP;UOI;AOR;ROR,"assert validate_pesel('71022702179') == True
-assert validate_pesel('71022702179') is True",2,66.67,47.06,21.43,21.43,36.59,30,52,NEG;BLR;CRP;LCR;ROR,"assert validate_pesel('71022702179') == True
+assert validate_pesel('12345345345') == False",3,60.0,44.12,57.14,57.14,7.79,6,71,NEG;BLR;AOR;UOI;ROR;CRP,"assert validate_pesel('71022702179') == True
+assert validate_pesel('71022702179') is True",2,66.67,47.06,21.43,21.43,36.36,28,49,NEG;BLR;AOR;LCR;ROR;CRP,"assert validate_pesel('71022702179') == True
 assert validate_pesel('44051401358') == False
 assert validate_pesel('71022702179') is True
-assert validate_pesel('44051401358') is False",4,80.0,47.06,21.43,21.43,36.59,30,52,NEG;BLR;CRP;LCR;ROR,"assert validate_pesel('71022702179') == True
+assert validate_pesel('44051401358') is False",4,80.0,47.06,21.43,21.43,36.36,28,49,NEG;BLR;AOR;LCR;ROR;CRP,"assert validate_pesel('71022702179') == True
 assert validate_pesel('44051401358') == False
 assert validate_pesel('71022702179') is True
-assert validate_pesel('44051401358') is False",4,100.0,47.06,21.43,21.43,36.59,30,52,NEG;BLR;CRP;LCR;ROR
+assert validate_pesel('44051401358') is False",4,100.0,47.06,21.43,21.43,36.36,28,49,NEG;BLR;AOR;LCR;ROR;CRP
 "def get_pesel_gender(pesel: str):
     import datetime
     if not isinstance(pesel, str):
@@ -384,7 +384,7 @@ assert get_pesel_gender([]) is None
 assert get_pesel_gender({}) is None
 assert get_pesel_gender(""99022912349"") is None
 assert get_pesel_gender(""00233212349"") is None
-assert get_pesel_gender(""00210012349"") is None",23,92.0,81.08,81.25,81.25,46.84,37,42,CRP;ROR;NEG,"assert get_pesel_gender(""44051401359"") == ""M""
+assert get_pesel_gender(""00210012349"") is None",23,92.0,81.08,81.25,81.25,46.75,36,41,ROR;AOR;NEG;CRP,"assert get_pesel_gender(""44051401359"") == ""M""
 assert get_pesel_gender(""02270803624"") == ""F""
 assert get_pesel_gender(""44051401350"") is None
 assert get_pesel_gender(""1234567890"") is None
@@ -393,8 +393,8 @@ assert get_pesel_gender(""A4051401359"") is None
 assert get_pesel_gender("""") is None
 assert get_pesel_gender(None) is None
 assert get_pesel_gender(44051401359) is None
-assert get_pesel_gender(""00000000000"") is None",10,76.92,75.68,81.25,81.25,51.9,41,38,NEG;ROR;CRP,,0,0.0,0,0,0,0,0,0,,assert get_pesel_gender('44051401359') == 'M',1,25.0,48.65,25.0,25.0,43.04,34,45,ROR;LCR;NEG;CRP,"assert get_pesel_gender('44051401359') == 'M'
-assert get_pesel_gender('02070803628') == 'F'",2,40.0,48.65,25.0,25.0,45.57,36,43,ROR;LCR;NEG;CRP,assert get_pesel_gender('44051401359') == 'M',1,25.0,48.65,25.0,25.0,43.04,34,45,ROR;LCR;NEG;CRP
+assert get_pesel_gender(""00000000000"") is None",10,76.92,75.68,81.25,81.25,51.95,40,37,ROR;AOR;CRP;NEG,,0,0.0,0,0,0,0,0,0,,assert get_pesel_gender('44051401359') == 'M',1,25.0,48.65,25.0,25.0,41.56,32,45,ROR;LCR;CRP;AOR;NEG,"assert get_pesel_gender('44051401359') == 'M'
+assert get_pesel_gender('02070803628') == 'F'",2,40.0,48.65,25.0,25.0,45.45,35,42,ROR;LCR;CRP;AOR;NEG,assert get_pesel_gender('44051401359') == 'M',1,25.0,48.65,25.0,25.0,41.56,32,45,ROR;LCR;CRP;AOR;NEG
 "def calc_circle_area_from_circumference(circumference: float) -> float:
     import math
     if not isinstance(circumference, (int, float)) or not math.isfinite(circumference) or circumference <= 0:
@@ -420,15 +420,15 @@ assert calc_circle_area_from_circumference(None) == 0
 assert calc_circle_area_from_circumference(False) == 0
 assert calc_circle_area_from_circumference([]) == 0
 assert calc_circle_area_from_circumference({}) == 0
-assert calc_circle_area_from_circumference((10,)) == 0",21,95.45,100.0,100.0,100.0,70.0,7,3,CRP;ROR,"assert calc_circle_area_from_circumference(0) == 0
+assert calc_circle_area_from_circumference((10,)) == 0",21,95.45,100.0,100.0,100.0,87.5,7,1,ROR,"assert calc_circle_area_from_circumference(0) == 0
 assert calc_circle_area_from_circumference(-10.5) == 0
 assert calc_circle_area_from_circumference(float('inf')) == 0
 assert calc_circle_area_from_circumference(float('nan')) == 0
 assert calc_circle_area_from_circumference(""10"") == 0
 assert calc_circle_area_from_circumference(None) == 0
-assert calc_circle_area_from_circumference("""") == 0",7,70.0,66.67,50.0,50.0,20.0,2,8,CRP;AOR;ROR,assert calc_circle_area_from_circumference(0.0) == 0.0,1,100.0,66.67,50.0,50.0,0.0,0,10,LCR;CRP;ROR;NEG;AOR,assert calc_circle_area_from_circumference(31.4159) == 78.54,1,100.0,83.33,50.0,50.0,60.0,6,4,LCR;CRP;ROR,"assert calc_circle_area_from_circumference(31.4159) == 78.54
-assert calc_circle_area_from_circumference(62.8318) == 314.16",2,100.0,83.33,50.0,50.0,60.0,6,4,LCR;CRP;ROR,"assert calc_circle_area_from_circumference(31.4159) == 78.54
-assert calc_circle_area_from_circumference(62.8318) == 314.16",2,100.0,83.33,50.0,50.0,60.0,6,4,LCR;CRP;ROR
+assert calc_circle_area_from_circumference("""") == 0",7,70.0,66.67,50.0,50.0,25.0,2,6,ROR;AOR;CRP,assert calc_circle_area_from_circumference(0.0) == 0.0,1,100.0,66.67,50.0,50.0,0.0,0,8,LCR;NEG;ROR;AOR;CRP,assert calc_circle_area_from_circumference(31.4159) == 78.54,1,100.0,83.33,50.0,50.0,75.0,6,2,LCR;ROR,"assert calc_circle_area_from_circumference(31.4159) == 78.54
+assert calc_circle_area_from_circumference(62.8318) == 314.16",2,100.0,83.33,50.0,50.0,75.0,6,2,LCR;ROR,"assert calc_circle_area_from_circumference(31.4159) == 78.54
+assert calc_circle_area_from_circumference(62.8318) == 314.16",2,100.0,83.33,50.0,50.0,75.0,6,2,LCR;ROR
 "def calc_circle_circumference_from_area(area: float) -> float:
     import math
     if not isinstance(area, (int, float)) or not math.isfinite(area) or area <= 0:
@@ -453,7 +453,7 @@ assert calc_circle_circumference_from_area(None) == 0
 assert calc_circle_circumference_from_area(False) == 0
 assert calc_circle_circumference_from_area([]) == 0
 assert calc_circle_circumference_from_area({}) == 0
-assert calc_circle_circumference_from_area((10,)) == 0",20,95.24,100.0,100.0,100.0,70.0,7,3,ROR;CRP,"assert calc_circle_circumference_from_area(78.54) == 31.42
+assert calc_circle_circumference_from_area((10,)) == 0",20,95.24,100.0,100.0,100.0,87.5,7,1,ROR,"assert calc_circle_circumference_from_area(78.54) == 31.42
 assert calc_circle_circumference_from_area(314.16) == 62.83
 assert calc_circle_circumference_from_area(12.57) == 12.57
 assert calc_circle_circumference_from_area(0) == 0
@@ -462,12 +462,12 @@ assert calc_circle_circumference_from_area(float('inf')) == 0
 assert calc_circle_circumference_from_area(float('nan')) == 0
 assert calc_circle_circumference_from_area(""100"") == 0
 assert calc_circle_circumference_from_area(None) == 0
-assert calc_circle_circumference_from_area("""") == 0",10,90.91,100.0,100.0,100.0,70.0,7,3,ROR;CRP,assert calc_circle_circumference_from_area(0.0) == 0.0,1,50.0,66.67,50.0,50.0,0.0,0,10,ROR;AOR;CRP;NEG;LCR,assert calc_circle_circumference_from_area(314.16) == 62.83,1,100.0,83.33,50.0,50.0,60.0,6,4,ROR;CRP;LCR,"assert calc_circle_circumference_from_area(314.16) == 62.83
+assert calc_circle_circumference_from_area("""") == 0",10,90.91,100.0,100.0,100.0,87.5,7,1,ROR,assert calc_circle_circumference_from_area(0.0) == 0.0,1,50.0,66.67,50.0,50.0,0.0,0,8,CRP;AOR;ROR;NEG;LCR,assert calc_circle_circumference_from_area(314.16) == 62.83,1,100.0,83.33,50.0,50.0,75.0,6,2,LCR;ROR,"assert calc_circle_circumference_from_area(314.16) == 62.83
 assert calc_circle_circumference_from_area(0.0) == 0.0
 assert calc_circle_circumference_from_area(314.15) == 62.83
 assert calc_circle_circumference_from_area(314.17) == 62.83
-assert calc_circle_circumference_from_area(314.175) == 62.83",5,83.33,100.0,100.0,100.0,60.0,6,4,ROR;CRP;LCR,"assert calc_circle_circumference_from_area(314.16) == 62.83
-assert calc_circle_circumference_from_area(0) == 0",2,100.0,100.0,100.0,100.0,60.0,6,4,ROR;CRP;LCR
+assert calc_circle_circumference_from_area(314.175) == 62.83",5,83.33,100.0,100.0,100.0,75.0,6,2,LCR;ROR,"assert calc_circle_circumference_from_area(314.16) == 62.83
+assert calc_circle_circumference_from_area(0) == 0",2,100.0,100.0,100.0,100.0,75.0,6,2,LCR;ROR
 "def calc_gold_price_per_gram(usd_per_ounce: float, usd_to_pln: float) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0 for x in (usd_per_ounce, usd_to_pln)):
@@ -493,7 +493,7 @@ assert calc_gold_price_per_gram(None, 4) == 0
 assert calc_gold_price_per_gram(2000, None) == 0
 assert calc_gold_price_per_gram(2000, False) == 0
 assert calc_gold_price_per_gram([], 4) == 0
-assert calc_gold_price_per_gram(2000, {}) == 0",21,87.5,100.0,100.0,100.0,66.67,6,3,ROR;CRP,"assert calc_gold_price_per_gram(2000.0, 4.0) == 257.23
+assert calc_gold_price_per_gram(2000, {}) == 0",21,87.5,100.0,100.0,100.0,85.71,6,1,ROR,"assert calc_gold_price_per_gram(2000.0, 4.0) == 257.23
 assert calc_gold_price_per_gram(1950.5, 3.95) == 247.73
 assert calc_gold_price_per_gram(0, 4.0) == 0
 assert calc_gold_price_per_gram(2000.0, 0) == 0
@@ -503,10 +503,10 @@ assert calc_gold_price_per_gram(float('inf'), 4.0) == 0
 assert calc_gold_price_per_gram(2000.0, float('nan')) == 0
 assert calc_gold_price_per_gram(""2000"", 4.0) == 0
 assert calc_gold_price_per_gram(2000.0, None) == 0
-assert calc_gold_price_per_gram("""", 4.0) == 0",11,91.67,100.0,100.0,100.0,66.67,6,3,ROR;CRP,,0,0.0,0,0,0,0,0,0,,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23",1,100.0,83.33,50.0,50.0,55.56,5,4,ROR;LCR;CRP,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23
-assert calc_gold_price_per_gram(1800.5, 3.95) == 228.68",2,100.0,83.33,50.0,50.0,55.56,5,4,ROR;LCR;CRP,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23
+assert calc_gold_price_per_gram("""", 4.0) == 0",11,91.67,100.0,100.0,100.0,85.71,6,1,ROR,,0,0.0,0,0,0,0,0,0,,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23",1,100.0,83.33,50.0,50.0,71.43,5,2,LCR;ROR,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23
+assert calc_gold_price_per_gram(1800.5, 3.95) == 228.68",2,100.0,83.33,50.0,50.0,71.43,5,2,LCR;ROR,"assert calc_gold_price_per_gram(2000, 4.0) == 257.23
 assert calc_gold_price_per_gram(1800.5, 3.95) == 228.68
-assert calc_gold_price_per_gram(4517.89, 3.62) == 525.88",3,100.0,83.33,50.0,50.0,55.56,5,4,ROR;LCR;CRP
+assert calc_gold_price_per_gram(4517.89, 3.62) == 525.88",3,100.0,83.33,50.0,50.0,71.43,5,2,LCR;ROR
 "def calc_trapezoid_area(base_a: float, base_b: float, height: float) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in (base_a, base_b, height)):
@@ -530,7 +530,7 @@ assert calc_trapezoid_area(5, """", 4) == 0
 assert calc_trapezoid_area(5, 3, """") == 0
 assert calc_trapezoid_area(None, 3, 4) == 0
 assert calc_trapezoid_area(5, None, 4) == 0
-assert calc_trapezoid_area(5, 3, None) == 0",16,100.0,100.0,100.0,100.0,58.82,10,7,CRP;ROR,"assert calc_trapezoid_area(5, 10, 4) == 30.0
+assert calc_trapezoid_area(5, 3, None) == 0",16,100.0,100.0,100.0,100.0,83.33,10,2,CRP;ROR,"assert calc_trapezoid_area(5, 10, 4) == 30.0
 assert calc_trapezoid_area(3.5, 2.5, 2) == 6.0
 assert calc_trapezoid_area(1.11, 2.22, 3.33) == 5.54
 assert calc_trapezoid_area(0, 10, 5) == 0
@@ -539,11 +539,11 @@ assert calc_trapezoid_area(10, 10, -2) == 0
 assert calc_trapezoid_area(None, 10, 5) == 0
 assert calc_trapezoid_area("""", 10, 5) == 0
 assert calc_trapezoid_area(5, ""10"", 5) == 0
-assert calc_trapezoid_area(5, 10, []) == 0",10,100.0,100.0,100.0,100.0,58.82,10,7,CRP;ROR,"assert calc_trapezoid_area(0.0, 1.0, 1.0) == 0.0
-assert calc_trapezoid_area(0.0, 0.0, 1.0) == 0.0",2,40.0,62.5,50.0,50.0,17.65,3,14,AOR;NEG;ROR;LCR;CRP,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0",1,100.0,75.0,50.0,50.0,35.29,6,11,LCR;ROR;CRP,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0
-assert calc_trapezoid_area(0, 10, 0.0) == 0.0",2,100.0,87.5,75.0,75.0,35.29,6,11,LCR;ROR;CRP,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0
+assert calc_trapezoid_area(5, 10, []) == 0",10,100.0,100.0,100.0,100.0,83.33,10,2,ROR,"assert calc_trapezoid_area(0.0, 1.0, 1.0) == 0.0
+assert calc_trapezoid_area(0.0, 0.0, 1.0) == 0.0",2,40.0,62.5,50.0,50.0,25.0,3,9,NEG;CRP;LCR;AOR;ROR,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0",1,100.0,75.0,50.0,50.0,50.0,6,6,LCR;CRP;ROR,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0
+assert calc_trapezoid_area(0, 10, 0.0) == 0.0",2,100.0,87.5,75.0,75.0,50.0,6,6,LCR;CRP;ROR,"assert calc_trapezoid_area(10, 6, 4.5) == 36.0
 assert calc_trapezoid_area(10, 0, 4) == 0
-assert calc_trapezoid_area(0, 0, 40) == 0",3,100.0,87.5,75.0,75.0,47.06,8,9,CRP;ROR;LCR
+assert calc_trapezoid_area(0, 0, 40) == 0",3,100.0,87.5,75.0,75.0,66.67,8,4,LCR;CRP;ROR
 "def calc_final_deposit_amount(principal: float, annual_interest: float, tax_rate: float) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in (principal, annual_interest, tax_rate)):
@@ -566,7 +566,7 @@ assert calc_final_deposit_amount(1000, """", 0.19) == 0
 assert calc_final_deposit_amount(1000, 0.05, """") == 0
 assert calc_final_deposit_amount(None, 0.05, 0.19) == 0
 assert calc_final_deposit_amount(1000, None, 0.19) == 0
-assert calc_final_deposit_amount(1000, 0.05, None) == 0",14,100.0,100.0,100.0,100.0,55.0,11,9,ROR;CRP,"assert calc_final_deposit_amount(1000, 0.05, 0.2) == 1040.0
+assert calc_final_deposit_amount(1000, 0.05, None) == 0",14,100.0,100.0,100.0,100.0,73.33,11,4,ROR,"assert calc_final_deposit_amount(1000, 0.05, 0.2) == 1040.0
 assert calc_final_deposit_amount(100, 0.1, 0) == 110.0
 assert calc_final_deposit_amount(500, 0.03, 0.19) == 512.15
 assert calc_final_deposit_amount(0, 0.05, 0.1) == 0
@@ -578,11 +578,11 @@ assert calc_final_deposit_amount("""", 0.05, 0.1) == 0
 assert calc_final_deposit_amount(1000, """", 0.1) == 0
 assert calc_final_deposit_amount(1000, 0.05, """") == 0
 assert calc_final_deposit_amount([], 0.05, 0.1) == 0
-assert calc_final_deposit_amount(1000, {}, 0.1) == 0",13,92.86,100.0,100.0,100.0,60.0,12,8,ROR;CRP,"assert calc_final_deposit_amount(0.0, 0.05, 1.0) == 0.0
+assert calc_final_deposit_amount(1000, {}, 0.1) == 0",13,92.86,100.0,100.0,100.0,80.0,12,3,ROR,"assert calc_final_deposit_amount(0.0, 0.05, 1.0) == 0.0
 assert calc_final_deposit_amount(0.0, 0.05, 0.19) == 0.0
-assert calc_final_deposit_amount(0, 0.05, 1.0) == 0.0",3,100.0,55.56,50.0,50.0,0.0,0,20,NEG;AOR;LCR;ROR;CRP,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030",1,100.0,77.78,50.0,50.0,40.0,8,12,LCR;CRP;ROR,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030
-assert calc_final_deposit_amount(10000, 0.04, 0.1) == 10360",2,100.0,77.78,50.0,50.0,40.0,8,12,LCR;CRP;ROR,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030
-assert calc_final_deposit_amount(10000, 0.04, 0.1) == 10360",2,100.0,77.78,50.0,50.0,40.0,8,12,LCR;CRP;ROR
+assert calc_final_deposit_amount(0, 0.05, 1.0) == 0.0",3,100.0,55.56,50.0,50.0,0.0,0,15,NEG;ROR;LCR;CRP;AOR,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030",1,100.0,77.78,50.0,50.0,53.33,8,7,LCR;CRP;ROR,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030
+assert calc_final_deposit_amount(10000, 0.04, 0.1) == 10360",2,100.0,77.78,50.0,50.0,53.33,8,7,LCR;CRP;ROR,"assert calc_final_deposit_amount(1000, 0.05, 0.4) == 1030
+assert calc_final_deposit_amount(10000, 0.04, 0.1) == 10360",2,100.0,77.78,50.0,50.0,53.33,8,7,LCR;CRP;ROR
 "def calc_interest_and_tax_details(principal: float, annual_interest: float, tax_rate: float) -> dict:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in (principal, annual_interest, tax_rate)):
@@ -603,7 +603,7 @@ assert calc_interest_and_tax_details(1000, """", 0.19) == {}
 assert calc_interest_and_tax_details(1000, 0.05, """") == {}
 assert calc_interest_and_tax_details(None, 0.05, 0.19) == {}
 assert calc_interest_and_tax_details(1000, None, 0.19) == {}
-assert calc_interest_and_tax_details(1000, 0.05, None) == {}",11,73.33,60.0,75.0,75.0,35.29,6,11,CRP;AOR;ROR,"assert calc_interest_and_tax_details(1000, 0.05, 0) == {""Interest"": 50.0, ""Tax"": 0.0}
+assert calc_interest_and_tax_details(1000, 0.05, None) == {}",11,73.33,60.0,75.0,75.0,42.86,6,8,ROR;CRP;AOR,"assert calc_interest_and_tax_details(1000, 0.05, 0) == {""Interest"": 50.0, ""Tax"": 0.0}
 assert calc_interest_and_tax_details(0, 0.05, 0.1) == {}
 assert calc_interest_and_tax_details(-100, 0.05, 0.1) == {}
 assert calc_interest_and_tax_details(1000, 0.05, 1.0) == {}
@@ -613,10 +613,10 @@ assert calc_interest_and_tax_details(1000, 0.05, None) == {}
 assert calc_interest_and_tax_details("""", 0.05, 0.1) == {}
 assert calc_interest_and_tax_details(1000, ""0.05"", 0.1) == {}
 assert calc_interest_and_tax_details(1000, 0.05, []) == {}
-assert calc_interest_and_tax_details({}, 0.05, 0.1) == {}",11,73.33,100.0,100.0,100.0,58.82,10,7,CRP;AOR;ROR,,0,0.0,0,0,0,0,0,0,,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}",1,100.0,80.0,50.0,50.0,35.29,6,11,CRP;ROR;LCR,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}
-assert calc_interest_and_tax_details(1000, 0.1, 0.81) == {'Interest': 19.0, 'Tax': 81.0}",2,100.0,80.0,50.0,50.0,35.29,6,11,CRP;ROR;LCR,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}
+assert calc_interest_and_tax_details({}, 0.05, 0.1) == {}",11,73.33,100.0,100.0,100.0,71.43,10,4,ROR;CRP;AOR,,0,0.0,0,0,0,0,0,0,,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}",1,100.0,80.0,50.0,50.0,42.86,6,8,ROR;CRP;LCR,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}
+assert calc_interest_and_tax_details(1000, 0.1, 0.81) == {'Interest': 19.0, 'Tax': 81.0}",2,100.0,80.0,50.0,50.0,42.86,6,8,ROR;CRP;LCR,"assert calc_interest_and_tax_details(200000, 0.01, 0.19) == {'Interest': 1620.0, 'Tax': 380.0}
 assert calc_interest_and_tax_details(1000, 0.1, 0.81) == {'Interest': 19.0, 'Tax': 81.0}
-assert calc_interest_and_tax_details(50000, 0.01, 0) == {'Interest': 500.0, 'Tax': 0}",3,75.0,80.0,50.0,50.0,41.18,7,10,CRP;ROR;LCR
+assert calc_interest_and_tax_details(50000, 0.01, 0) == {'Interest': 500.0, 'Tax': 0}",3,75.0,80.0,50.0,50.0,50.0,7,7,ROR;CRP;LCR
 "def find_unique_letters(text: str) -> str:
     if not isinstance(text, str):
         return """"
@@ -724,7 +724,7 @@ assert calc_cuboid_volume(2, """", 4) == 0
 assert calc_cuboid_volume(2, 3, """") == 0
 assert calc_cuboid_volume(None, 3, 4) == 0
 assert calc_cuboid_volume(2, None, 4) == 0
-assert calc_cuboid_volume(2, 3, None) == 0",16,100.0,100.0,100.0,100.0,50.0,4,4,ROR;CRP,"assert calc_cuboid_volume(2, 3, 4) == 24.0
+assert calc_cuboid_volume(2, 3, None) == 0",16,100.0,100.0,100.0,100.0,66.67,4,2,ROR;CRP,"assert calc_cuboid_volume(2, 3, 4) == 24.0
 assert calc_cuboid_volume(10, 10, 10) == 1000.0
 assert calc_cuboid_volume(0, 5, 5) == 0
 assert calc_cuboid_volume(5, -1, 5) == 0
@@ -736,10 +736,10 @@ assert calc_cuboid_volume("""", 5, 5) == 0
 assert calc_cuboid_volume(5, ""5"", 5) == 0
 assert calc_cuboid_volume(5, 5, ""five"") == 0
 assert calc_cuboid_volume([], 5, 5) == 0
-assert calc_cuboid_volume(5, {}, 5) == 0",13,92.86,100.0,100.0,100.0,50.0,4,4,ROR;CRP,,0,0.0,0,0,0,0,0,0,,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23",1,100.0,83.33,50.0,50.0,50.0,4,4,LCR;ROR;CRP,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23
-assert calc_cuboid_volume(6.7, 5, 5.1) == 170.85",2,100.0,83.33,50.0,50.0,50.0,4,4,LCR;ROR;CRP,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23
+assert calc_cuboid_volume(5, {}, 5) == 0",13,92.86,100.0,100.0,100.0,66.67,4,2,ROR;CRP,,0,0.0,0,0,0,0,0,0,,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23",1,100.0,83.33,50.0,50.0,66.67,4,2,LCR;ROR,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23
+assert calc_cuboid_volume(6.7, 5, 5.1) == 170.85",2,100.0,83.33,50.0,50.0,66.67,4,2,LCR;ROR,"assert calc_cuboid_volume(1.5, 2.2, 3.1) == 10.23
 assert calc_cuboid_volume(6.7, 5, 5.1) == 170.85
-assert calc_cuboid_volume(0, 3, 4) == 0",3,100.0,100.0,100.0,100.0,50.0,4,4,LCR;ROR;CRP
+assert calc_cuboid_volume(0, 3, 4) == 0",3,100.0,100.0,100.0,100.0,66.67,4,2,LCR;ROR
 "def calc_cone_volume(radius: float, height: float) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0 for x in (radius, height)):
@@ -755,7 +755,7 @@ assert calc_cone_volume(-3, 5) == 0
 assert calc_cone_volume(3, -5) == 0
 assert calc_cone_volume("""", 5) == 0
 assert calc_cone_volume(3, """") == 0
-assert calc_cone_volume(None, 5) == 0",11,91.67,100.0,100.0,100.0,76.92,10,3,CRP;ROR,"assert calc_cone_volume(3, 4) == 37.7
+assert calc_cone_volume(None, 5) == 0",11,91.67,100.0,100.0,100.0,90.91,10,1,ROR,"assert calc_cone_volume(3, 4) == 37.7
 assert calc_cone_volume(1, 1) == 1.05
 assert calc_cone_volume(1.5, 2.5) == 5.89
 assert calc_cone_volume(10, 20) == 2094.4
@@ -769,12 +769,12 @@ assert calc_cone_volume("""", 10) == 0
 assert calc_cone_volume(10, """") == 0
 assert calc_cone_volume(""5"", 10) == 0
 assert calc_cone_volume(10, []) == 0
-assert calc_cone_volume({}, 10) == 0",15,100.0,100.0,100.0,100.0,76.92,10,3,CRP;ROR,"assert calc_cone_volume(0.0, 0.0) == 0.0
+assert calc_cone_volume({}, 10) == 0",15,100.0,100.0,100.0,100.0,90.91,10,1,ROR,"assert calc_cone_volume(0.0, 0.0) == 0.0
 assert calc_cone_volume(0.0, 1.0) == 0.0
-assert calc_cone_volume(0, 0.0) == 0.0",3,75.0,66.67,50.0,50.0,0.0,0,13,AOR;NEG;ROR;CRP;LCR,"assert calc_cone_volume(2.5, 10) == 65.45",1,100.0,83.33,50.0,50.0,69.23,9,4,CRP;LCR;ROR,"assert calc_cone_volume(2.5, 10) == 65.45
-assert calc_cone_volume(0, 5) == 0",2,100.0,100.0,100.0,100.0,69.23,9,4,CRP;LCR;ROR,"assert calc_cone_volume(2.5, 10) == 65.45
+assert calc_cone_volume(0, 0.0) == 0.0",3,75.0,66.67,50.0,50.0,0.0,0,11,CRP;ROR;LCR;NEG;AOR,"assert calc_cone_volume(2.5, 10) == 65.45",1,100.0,83.33,50.0,50.0,81.82,9,2,ROR;LCR,"assert calc_cone_volume(2.5, 10) == 65.45
+assert calc_cone_volume(0, 5) == 0",2,100.0,100.0,100.0,100.0,81.82,9,2,ROR;LCR,"assert calc_cone_volume(2.5, 10) == 65.45
 assert calc_cone_volume(0, 5) == 0
-assert calc_cone_volume(1, 3) == 3.14",3,100.0,100.0,100.0,100.0,69.23,9,4,CRP;LCR;ROR
+assert calc_cone_volume(1, 3) == 3.14",3,100.0,100.0,100.0,100.0,81.82,9,2,ROR;LCR
 "def reverse_string(text: str) -> str:
     if not isinstance(text, str):
         return """"
@@ -800,7 +800,7 @@ assert reverse_string(None) == """"
 assert reverse_string(123) == """"
 assert reverse_string([]) == """"
 assert reverse_string({}) == """"
-assert reverse_string(True) == """"",12,100.0,100.0,100.0,100.0,100.0,3,0,,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,NEG;UOI,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,NEG;UOI,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,NEG;UOI,"assert reverse_string('') == ''
+assert reverse_string(True) == """"",12,100.0,100.0,100.0,100.0,100.0,3,0,,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,UOI;NEG,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,UOI;NEG,assert reverse_string('') == '',1,100.0,75.0,50.0,50.0,33.33,1,2,UOI;NEG,"assert reverse_string('') == ''
 assert reverse_string('Python') == 'nohtyP'
 assert reverse_string('racecar') == 'racecar'",3,75.0,75.0,50.0,50.0,100.0,3,0,
 "def calc_weighted_average(grades: dict) -> float | None:
@@ -833,7 +833,7 @@ assert calc_weighted_average({5: -1}) is None
 assert calc_weighted_average({""5"": 2}) is None
 assert calc_weighted_average({5: ""2""}) is None
 assert calc_weighted_average({None: 2}) is None
-assert calc_weighted_average({5: None}) is None",16,100.0,93.75,80.0,80.0,75.0,15,5,CRP;LCR,"assert calc_weighted_average({5: 2, 4: 3}) == 4.4
+assert calc_weighted_average({5: None}) is None",16,100.0,93.75,80.0,80.0,88.24,15,2,LCR;CRP,"assert calc_weighted_average({5: 2, 4: 3}) == 4.4
 assert calc_weighted_average({6: 1, 1: 1}) == 3.5
 assert calc_weighted_average({3: 1, 4: 2}) == 3.67
 assert calc_weighted_average({}) == None
@@ -849,7 +849,7 @@ assert calc_weighted_average([]) == None
 assert calc_weighted_average({5: None}) == None
 assert calc_weighted_average({None: 5}) == None
 assert calc_weighted_average({""5"": 2}) == None
-assert calc_weighted_average({5: ""2""}) == None",17,100.0,93.75,80.0,80.0,80.0,16,4,CRP,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,
+assert calc_weighted_average({5: ""2""}) == None",17,100.0,93.75,80.0,80.0,94.12,16,1,CRP,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,,,0,0.0,0,0,0,0,0,0,
 "def calc_median(values: list[float]) -> float | None:
     import math
     if not isinstance(values, list) or not values:
@@ -890,10 +890,10 @@ assert calc_median([""a"", ""b""]) == None
 assert calc_median([1, 2, []]) == None",14,100.0,92.86,100.0,100.0,100.0,16,0,,"assert calc_median([1, 1, 1]) == 1
 assert calc_median([1, 1, 1, 1]) == 1
 assert calc_median([1, 1, 1, 1]) == 1.0
-assert calc_median([1, 1, 1, 1, 1]) == 1.0",4,100.0,78.57,66.67,66.67,50.0,8,8,ROR;CRP;NEG;AOR;LCR,"assert calc_median([1.0, 2.0, 3.0, 4.0]) == 2.5
+assert calc_median([1, 1, 1, 1, 1]) == 1.0",4,100.0,78.57,66.67,66.67,50.0,8,8,CRP;AOR;ROR;NEG;LCR,"assert calc_median([1.0, 2.0, 3.0, 4.0]) == 2.5
 assert calc_median([-1.0, 0.0, 1.0, 0.0]) == 0.0",2,100.0,71.43,50.0,50.0,87.5,14,2,LCR,"assert calc_median([1.0, 2.0, 3.0, 4.0]) == 2.5
 assert calc_median([1.0, 2.0, 3.0]) == 2.0",2,100.0,78.57,66.67,66.67,87.5,14,2,LCR,"assert calc_median([1.0, 2.0, 3.0, 4.0, 125.0, 17.0, 15.0]) == 4.0
-assert calc_median([1.0, 2.0, 3, 4, 125.0, 17.0, 15.0]) == 4.0",2,50.0,71.43,50.0,50.0,50.0,8,8,AOR;LCR;CRP
+assert calc_median([1.0, 2.0, 3, 4, 125.0, 17.0, 15.0]) == 4.0",2,50.0,71.43,50.0,50.0,50.0,8,8,LCR;AOR;CRP
 "def calc_cylinder_volume(diameter: float, height: float) -> float:
     import math
     if not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0 for x in (diameter, height)):
@@ -925,7 +925,7 @@ assert calc_cylinder_volume([], 5) == 0
 assert calc_cylinder_volume(5, []) == 0
 assert calc_cylinder_volume({}, 5) == 0
 assert calc_cylinder_volume(5, {}) == 0
-assert calc_cylinder_volume(5, False) == 0",26,96.3,100.0,100.0,100.0,72.73,8,3,CRP;ROR,"assert calc_cylinder_volume(10, 5) == 392.7
+assert calc_cylinder_volume(5, False) == 0",26,96.3,100.0,100.0,100.0,88.89,8,1,ROR,"assert calc_cylinder_volume(10, 5) == 392.7
 assert calc_cylinder_volume(2, 10) == 31.42
 assert calc_cylinder_volume(0, 10) == 0
 assert calc_cylinder_volume(10, 0) == 0
@@ -938,11 +938,11 @@ assert calc_cylinder_volume(10, """") == 0
 assert calc_cylinder_volume(""10"", ""5"") == 0
 assert calc_cylinder_volume(float('inf'), 10) == 0
 assert calc_cylinder_volume(10, float('nan')) == 0
-assert calc_cylinder_volume(1.5, 2.5) == 4.42",14,100.0,100.0,100.0,100.0,72.73,8,3,CRP;ROR,"assert calc_cylinder_volume(0.0, 1.0) == 0.0
-assert calc_cylinder_volume(0.0, 0.0) == 0.0",2,50.0,57.14,50.0,50.0,0.0,0,11,AOR;ROR;NEG;CRP;LCR,"assert calc_cylinder_volume(10, 5) == 392.7",1,100.0,85.71,50.0,50.0,63.64,7,4,CRP;ROR;LCR,"assert calc_cylinder_volume(10, 5) == 392.7
-assert calc_cylinder_volume(3.6, 7.8) == 79.39",2,100.0,85.71,50.0,50.0,63.64,7,4,CRP;ROR;LCR,"assert calc_cylinder_volume(10, 5) == 392.7
+assert calc_cylinder_volume(1.5, 2.5) == 4.42",14,100.0,100.0,100.0,100.0,88.89,8,1,ROR,"assert calc_cylinder_volume(0.0, 1.0) == 0.0
+assert calc_cylinder_volume(0.0, 0.0) == 0.0",2,50.0,57.14,50.0,50.0,0.0,0,9,ROR;NEG;AOR;CRP;LCR,"assert calc_cylinder_volume(10, 5) == 392.7",1,100.0,85.71,50.0,50.0,77.78,7,2,LCR;ROR,"assert calc_cylinder_volume(10, 5) == 392.7
+assert calc_cylinder_volume(3.6, 7.8) == 79.39",2,100.0,85.71,50.0,50.0,77.78,7,2,LCR;ROR,"assert calc_cylinder_volume(10, 5) == 392.7
 assert calc_cylinder_volume(3.6, 7.8) == 79.39
-assert calc_cylinder_volume(2, 10) == 31.42",3,100.0,85.71,50.0,50.0,63.64,7,4,CRP;ROR;LCR
+assert calc_cylinder_volume(2, 10) == 31.42",3,100.0,85.71,50.0,50.0,77.78,7,2,LCR;ROR
 "def calc_days_between_dates(date1, date2) -> int:
     def _convert_to_date(d):
         from datetime import datetime, date
@@ -982,7 +982,7 @@ assert calc_days_between_dates(""not-a-date"", ""2024-01-02"") == 0
 assert calc_days_between_dates(20240101, ""2024-01-02"") == 0
 assert calc_days_between_dates(""2024-01-01"", 20240102) == 0
 assert calc_days_between_dates([], ""2024-01-02"") == 0
-assert calc_days_between_dates(""2024-01-01"", {}) == 0",24,100.0,94.12,83.33,83.33,83.33,5,1,CRP,"assert calc_days_between_dates('2023-01-01', '2023-01-02') == 1
+assert calc_days_between_dates(""2024-01-01"", {}) == 0",24,100.0,94.12,83.33,83.33,100.0,5,0,,"assert calc_days_between_dates('2023-01-01', '2023-01-02') == 1
 assert calc_days_between_dates('2023-01-02', '2023-01-01') == 1
 assert calc_days_between_dates('2023-01-01', '2023-01-01') == 0
 assert calc_days_between_dates('2024-01-01', '2025-01-01') == 366
@@ -996,10 +996,10 @@ assert calc_days_between_dates('2023-01-01', '01-01-2023') == 0
 assert calc_days_between_dates('2023-02-29', '2023-03-01') == 0
 assert calc_days_between_dates('2023-13-01', '2023-01-01') == 0
 assert calc_days_between_dates(12345, '2023-01-01') == 0
-assert calc_days_between_dates('2023-01-01', 20230101) == 0",15,100.0,94.12,83.33,83.33,83.33,5,1,CRP,,0,0.0,0,0,0,0,0,0,,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9",1,100.0,70.59,50.0,50.0,66.67,4,2,LCR;CRP,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9
-assert calc_days_between_dates('2020-01-01', '2020-12-31') == 365",2,100.0,70.59,50.0,50.0,66.67,4,2,LCR;CRP,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9
+assert calc_days_between_dates('2023-01-01', 20230101) == 0",15,100.0,94.12,83.33,83.33,100.0,5,0,,,0,0.0,0,0,0,0,0,0,,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9",1,100.0,70.59,50.0,50.0,80.0,4,1,LCR,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9
+assert calc_days_between_dates('2020-01-01', '2020-12-31') == 365",2,100.0,70.59,50.0,50.0,80.0,4,1,LCR,"assert calc_days_between_dates('2024-01-01', '2024-01-10') == 9
 assert calc_days_between_dates('2020-01-01', '2020-12-31') == 365
-assert calc_days_between_dates('2023-12-31', '2024-01-01') == 1",3,100.0,70.59,50.0,50.0,66.67,4,2,LCR;CRP
+assert calc_days_between_dates('2023-12-31', '2024-01-01') == 1",3,100.0,70.59,50.0,50.0,80.0,4,1,LCR
 "def swap_case_manual(text: str) -> str:
     if not isinstance(text, str):
         return """"
@@ -1084,7 +1084,7 @@ assert calc_train_meeting_time(100, 50, []) == 0
 assert calc_train_meeting_time({}, 50, 50) == 0
 assert calc_train_meeting_time(100, {}, 50) == 0
 assert calc_train_meeting_time(100, 50, {}) == 0
-assert calc_train_meeting_time(100, False, 50) == 0",32,94.12,100.0,100.0,100.0,75.0,6,2,CRP,"assert calc_train_meeting_time(100, 60, 40) == 1.0
+assert calc_train_meeting_time(100, False, 50) == 0",32,94.12,100.0,100.0,100.0,100.0,6,0,,"assert calc_train_meeting_time(100, 60, 40) == 1.0
 assert calc_train_meeting_time(100, 30, 30) == 1.67
 assert calc_train_meeting_time(500, 120, 80) == 2.5
 assert calc_train_meeting_time(0, 50, 50) == 0
@@ -1103,11 +1103,11 @@ assert calc_train_meeting_time(""100"", 50, 50) == 0
 assert calc_train_meeting_time(float('inf'), 50, 50) == 0
 assert calc_train_meeting_time(100, float('nan'), 50) == 0
 assert calc_train_meeting_time(1, 1, 1) == 0.5
-assert calc_train_meeting_time(10, 3, 3) == 1.67",20,100.0,100.0,100.0,100.0,75.0,6,2,CRP,"assert calc_train_meeting_time(0.0, 0.0, 0.0) == 0.0
-assert calc_train_meeting_time(0.0, 10, 10) == 0.0",2,40.0,57.14,50.0,50.0,37.5,3,5,AOR;CRP,"assert calc_train_meeting_time(100, 50, 50) == 1.0",1,100.0,85.71,50.0,50.0,37.5,3,5,ROR;LCR;CRP,"assert calc_train_meeting_time(100, 50, 50) == 1.0
-assert calc_train_meeting_time(150, 75, 25) == 1.5",2,100.0,85.71,50.0,50.0,50.0,4,4,ROR;LCR;CRP,"assert calc_train_meeting_time(100, 50, 50) == 1.0
+assert calc_train_meeting_time(10, 3, 3) == 1.67",20,100.0,100.0,100.0,100.0,100.0,6,0,,"assert calc_train_meeting_time(0.0, 0.0, 0.0) == 0.0
+assert calc_train_meeting_time(0.0, 10, 10) == 0.0",2,40.0,57.14,50.0,50.0,50.0,3,3,CRP;AOR,"assert calc_train_meeting_time(100, 50, 50) == 1.0",1,100.0,85.71,50.0,50.0,50.0,3,3,CRP;ROR;LCR,"assert calc_train_meeting_time(100, 50, 50) == 1.0
+assert calc_train_meeting_time(150, 75, 25) == 1.5",2,100.0,85.71,50.0,50.0,66.67,4,2,ROR;LCR,"assert calc_train_meeting_time(100, 50, 50) == 1.0
 assert calc_train_meeting_time(150, 75, 25) == 1.5
-assert calc_train_meeting_time(300, 80, 70) == 2.0",3,100.0,85.71,50.0,50.0,50.0,4,4,ROR;LCR;CRP
+assert calc_train_meeting_time(300, 80, 70) == 2.0",3,100.0,85.71,50.0,50.0,66.67,4,2,ROR;LCR
 "def reverse_words(sentence: str) -> str:
     if not isinstance(sentence, str):
         return """"
@@ -1231,7 +1231,7 @@ assert caesar_cipher([], 2) == """"
 assert caesar_cipher(""abc"", []) == """"
 assert caesar_cipher({}, 2) == """"
 assert caesar_cipher(""abc"", {}) == """"
-assert caesar_cipher(True, 2) == """"",25,96.15,91.67,100.0,100.0,100.0,7,0,,"assert caesar_cipher(""abc"", 1) == ""bcd""
+assert caesar_cipher(True, 2) == """"",25,96.15,91.67,100.0,100.0,85.71,6,1,AOR,"assert caesar_cipher(""abc"", 1) == ""bcd""
 assert caesar_cipher(""ABC"", 1) == ""BCD""
 assert caesar_cipher(""xyz"", 3) == ""abc""
 assert caesar_cipher(""XYZ"", 3) == ""ABC""
@@ -1245,12 +1245,12 @@ assert caesar_cipher(None, 5) == """"
 assert caesar_cipher(""abc"", None) == """"
 assert caesar_cipher(123, 1) == """"
 assert caesar_cipher(""abc"", ""1"") == """"
-assert caesar_cipher(""abc"", 53) == ""bcd""",15,100.0,91.67,100.0,100.0,100.0,7,0,,"assert caesar_cipher('hello world', 0) == 'hello world'
-assert caesar_cipher('Hello world!', 0) == 'Hello world!'",2,50.0,83.33,66.67,66.67,85.71,6,1,LCR,"assert caesar_cipher('xyza', 3) == 'abcd'",1,100.0,75.0,50.0,50.0,85.71,6,1,LCR,"assert caesar_cipher('Hello, World!', 5) == 'Mjqqt, Btwqi!'
+assert caesar_cipher(""abc"", 53) == ""bcd""",15,100.0,91.67,100.0,100.0,85.71,6,1,AOR,"assert caesar_cipher('hello world', 0) == 'hello world'
+assert caesar_cipher('Hello world!', 0) == 'Hello world!'",2,50.0,83.33,66.67,66.67,57.14,4,3,LCR;AOR,"assert caesar_cipher('xyza', 3) == 'abcd'",1,100.0,75.0,50.0,50.0,71.43,5,2,LCR;AOR,"assert caesar_cipher('Hello, World!', 5) == 'Mjqqt, Btwqi!'
 assert caesar_cipher('xyza', 3) == 'abcd'
-assert caesar_cipher('', 3) == ''",3,100.0,83.33,83.33,83.33,85.71,6,1,LCR,"assert caesar_cipher('Hello, World!', 5) == 'Mjqqt, Btwqi!'
+assert caesar_cipher('', 3) == ''",3,100.0,83.33,83.33,83.33,71.43,5,2,LCR;AOR,"assert caesar_cipher('Hello, World!', 5) == 'Mjqqt, Btwqi!'
 assert caesar_cipher('Clguba', -13) == 'Python'
-assert caesar_cipher('xyza', 3) == 'abcd'",3,100.0,83.33,66.67,66.67,85.71,6,1,LCR
+assert caesar_cipher('xyza', 3) == 'abcd'",3,100.0,83.33,66.67,66.67,71.43,5,2,LCR;AOR
 "def is_palindrome(value) -> bool:
     if isinstance(value, bool):
         return False
@@ -1284,7 +1284,7 @@ assert is_palindrome(float(""-inf"")) is False
 assert is_palindrome(float(""nan"")) is False
 assert is_palindrome([]) is False
 assert is_palindrome({}) is False
-assert is_palindrome((""a"",""a"")) is False",22,100.0,100.0,100.0,100.0,89.47,17,2,ROR;CRP,"assert is_palindrome(""radar"") == True
+assert is_palindrome((""a"",""a"")) is False",22,100.0,100.0,100.0,100.0,92.86,13,1,ROR,"assert is_palindrome(""radar"") == True
 assert is_palindrome(""Level"") == True
 assert is_palindrome(""hello"") == False
 assert is_palindrome(121) == True
@@ -1297,14 +1297,14 @@ assert is_palindrome(True) == False
 assert is_palindrome(1.21) == False
 assert is_palindrome(float('inf')) == False
 assert is_palindrome(""A man a plan a canal Panama"") == False
-assert is_palindrome(""step on no pets"") == True",14,93.33,100.0,100.0,100.0,73.68,14,5,CRP,"assert is_palindrome(None) == False
-assert is_palindrome('a') == True",2,40.0,61.54,50.0,50.0,42.11,8,11,ROR;BLR;CRP;NEG;UOI,"assert is_palindrome('Level') == True
+assert is_palindrome(""step on no pets"") == True",14,93.33,100.0,100.0,100.0,100.0,14,0,,"assert is_palindrome(None) == False
+assert is_palindrome('a') == True",2,40.0,61.54,50.0,50.0,57.14,8,6,BLR;UOI;ROR;NEG,"assert is_palindrome('Level') == True
 assert is_palindrome('A') == True
-assert is_palindrome('level') == True",3,75.0,53.85,40.0,40.0,36.84,7,12,ROR;BLR;CRP;NEG;UOI,"assert is_palindrome('Level') == True
+assert is_palindrome('level') == True",3,75.0,53.85,40.0,40.0,50.0,7,7,BLR;UOI;ROR;NEG,"assert is_palindrome('Level') == True
 assert is_palindrome('level') == True
-assert is_palindrome('A') == True",3,60.0,53.85,40.0,40.0,36.84,7,12,ROR;BLR;CRP;NEG;UOI,"assert is_palindrome('Level') == True
+assert is_palindrome('A') == True",3,60.0,53.85,40.0,40.0,50.0,7,7,BLR;UOI;ROR;NEG,"assert is_palindrome('Level') == True
 assert is_palindrome('level') == True
-assert is_palindrome('A') == True",3,60.0,53.85,40.0,40.0,36.84,7,12,ROR;BLR;CRP;NEG;UOI
+assert is_palindrome('A') == True",3,60.0,53.85,40.0,40.0,50.0,7,7,BLR;UOI;ROR;NEG
 "def sum_numbers(values) -> float | None:
     import math
     if not isinstance(values, list):
@@ -1340,7 +1340,7 @@ assert sum_numbers(12.5) is None
 assert sum_numbers(True) is None
 assert sum_numbers(False) is None
 assert sum_numbers({}) is None
-assert sum_numbers(()) is None",23,100.0,100.0,100.0,100.0,85.71,6,1,CRP,"assert sum_numbers([1, 2, 3]) == 6.0
+assert sum_numbers(()) is None",23,100.0,100.0,100.0,100.0,100.0,6,0,,"assert sum_numbers([1, 2, 3]) == 6.0
 assert sum_numbers([1.5, 2.5, 3.0]) == 7.0
 assert sum_numbers([1, 2.5, 4]) == 7.5
 assert sum_numbers([]) == 0.0
@@ -1354,10 +1354,10 @@ assert sum_numbers([1, float('inf'), 3]) == None
 assert sum_numbers([1, float('nan'), 3]) == None
 assert sum_numbers(123) == None
 assert sum_numbers({""a"": 1, ""b"": 2}) == None
-assert sum_numbers([1, [2], 3]) == None",15,100.0,100.0,100.0,100.0,85.71,6,1,CRP,"assert sum_numbers([1, 2, 3, 4, 5]) == 15.0",1,20.0,71.43,50.0,50.0,57.14,4,3,CRP;LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
-assert sum_numbers(None) == None",2,50.0,78.57,60.0,60.0,71.43,5,2,CRP;LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
-assert sum_numbers([-1, -2.5]) == -3.5",2,66.67,71.43,50.0,50.0,71.43,5,2,CRP;LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
-assert sum_numbers([-1, -2.5]) == -3.5",2,66.67,71.43,50.0,50.0,71.43,5,2,CRP;LCR
+assert sum_numbers([1, [2], 3]) == None",15,100.0,100.0,100.0,100.0,100.0,6,0,,"assert sum_numbers([1, 2, 3, 4, 5]) == 15.0",1,20.0,71.43,50.0,50.0,66.67,4,2,LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
+assert sum_numbers(None) == None",2,50.0,78.57,60.0,60.0,83.33,5,1,LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
+assert sum_numbers([-1, -2.5]) == -3.5",2,66.67,71.43,50.0,50.0,83.33,5,1,LCR,"assert sum_numbers([1, 2.5, -3]) == 0.5
+assert sum_numbers([-1, -2.5]) == -3.5",2,66.67,71.43,50.0,50.0,83.33,5,1,LCR
 "def subtract_numbers(values) -> float | None:
     import math
     if not isinstance(values, list):
@@ -1398,7 +1398,7 @@ assert subtract_numbers(12.5) is None
 assert subtract_numbers(True) is None
 assert subtract_numbers(False) is None
 assert subtract_numbers({}) is None
-assert subtract_numbers(()) is None",25,100.0,100.0,92.86,92.86,80.0,8,2,CRP,"assert subtract_numbers([10, 5, 2]) == 3.0
+assert subtract_numbers(()) is None",25,100.0,100.0,92.86,92.86,100.0,8,0,,"assert subtract_numbers([10, 5, 2]) == 3.0
 assert subtract_numbers([100, 50.5, 10]) == 39.5
 assert subtract_numbers([5]) == 5.0
 assert subtract_numbers([]) == 0.0
@@ -1412,6 +1412,6 @@ assert subtract_numbers([10, float('inf'), 2]) == None
 assert subtract_numbers([10, float('nan'), 2]) == None
 assert subtract_numbers(123) == None
 assert subtract_numbers([10, [5], 2]) == None
-assert subtract_numbers([10, 20]) == -10.0",15,100.0,100.0,92.86,92.86,80.0,8,2,CRP,"assert subtract_numbers([None, None, None, 0.0]) == None",1,20.0,47.06,35.71,35.71,10.0,1,9,CRP;LCR;NEG,"assert subtract_numbers([10, 2, 3]) == 5.0
-assert subtract_numbers([1, -1, 2]) == 0.0",2,40.0,70.59,50.0,50.0,60.0,6,4,LCR;CRP,"assert subtract_numbers([10, 2, 3]) == 5.0",1,20.0,70.59,50.0,50.0,60.0,6,4,LCR;CRP,"assert subtract_numbers([10, 2, 3]) == 5.0
-assert subtract_numbers([1, None]) == None",2,40.0,76.47,57.14,57.14,60.0,6,4,LCR;CRP
+assert subtract_numbers([10, 20]) == -10.0",15,100.0,100.0,92.86,92.86,100.0,8,0,,"assert subtract_numbers([None, None, None, 0.0]) == None",1,20.0,47.06,35.71,35.71,12.5,1,7,NEG;CRP;LCR,"assert subtract_numbers([10, 2, 3]) == 5.0
+assert subtract_numbers([1, -1, 2]) == 0.0",2,40.0,70.59,50.0,50.0,75.0,6,2,LCR,"assert subtract_numbers([10, 2, 3]) == 5.0",1,20.0,70.59,50.0,50.0,75.0,6,2,LCR,"assert subtract_numbers([10, 2, 3]) == 5.0
+assert subtract_numbers([1, None]) == None",2,40.0,76.47,57.14,57.14,75.0,6,2,LCR
