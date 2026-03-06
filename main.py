@@ -3,11 +3,106 @@ import ast
 import sys
 from multiprocessing import Pool, cpu_count
 
+class FastMutator(ast.NodeTransformer):
 
-# =========================
+    def __init__(self, original_tree):
+        self.original_tree = original_tree
+        self.mutants = []
+
+    def generate(self):
+
+        for node in ast.walk(self.original_tree):
+
+            # Arithmetic
+            if isinstance(node, ast.BinOp):
+
+                replacements = {
+                    ast.Add: ast.Sub,
+                    ast.Sub: ast.Add,
+                    ast.Mult: ast.Div,
+                    ast.Div: ast.Mult,
+                    ast.FloorDiv: ast.Mult,
+                }
+
+                for src, dst in replacements.items():
+
+                    if isinstance(node.op, src):
+
+                        new_tree = ast.parse(ast.unparse(self.original_tree))
+                        target = self._find_equivalent(new_tree, node)
+
+                        if target:
+                            target.op = dst()
+                            self.mutants.append(("AOR", new_tree))
+
+            # Relational
+            if isinstance(node, ast.Compare):
+
+                replacements = {
+                    ast.Gt: ast.GtE,
+                    ast.GtE: ast.Gt,
+                    ast.Lt: ast.LtE,
+                    ast.LtE: ast.Lt,
+                    ast.Eq: ast.NotEq,
+                    ast.NotEq: ast.Eq
+                }
+
+                for i, op in enumerate(node.ops):
+
+                    for src, dst in replacements.items():
+
+                        if isinstance(op, src):
+
+                            new_tree = ast.parse(ast.unparse(self.original_tree))
+                            target = self._find_equivalent(new_tree, node)
+
+                            if target:
+                                target.ops[i] = dst()
+                                self.mutants.append(("ROR", new_tree))
+
+            # Logical
+            if isinstance(node, ast.BoolOp):
+
+                if isinstance(node.op, ast.And):
+
+                    new_tree = ast.parse(ast.unparse(self.original_tree))
+                    target = self._find_equivalent(new_tree, node)
+
+                    if target:
+                        target.op = ast.Or()
+                        self.mutants.append(("LCR", new_tree))
+
+                if isinstance(node.op, ast.Or):
+
+                    new_tree = ast.parse(ast.unparse(self.original_tree))
+                    target = self._find_equivalent(new_tree, node)
+
+                    if target:
+                        target.op = ast.And()
+                        self.mutants.append(("LCR", new_tree))
+
+            if isinstance(node, ast.UnaryOp):
+                if isinstance(node.op, ast.USub):
+                    new_tree = ast.parse(ast.unparse(self.original_tree))
+                    target = self._find_equivalent(new_tree, node)
+                    if target:
+                        target.op = ast.UAdd()
+                        self.mutants.append(("UOI", new_tree))
+        return self.mutants
+
+    @staticmethod
+    def _find_equivalent(tree, original):
+        for node in ast.walk(tree):
+            if (
+                    type(node) == type(original)
+                    and getattr(node, "lineno", None) == getattr(original, "lineno", None)
+                    and getattr(node, "col_offset", None) == getattr(original, "col_offset", None)
+            ):
+                return node
+        return None
+
+
 # ASSERT PARSING
-# =========================
-
 def _parse_asserts(asserts_raw):
     if not isinstance(asserts_raw, str) or not asserts_raw.strip():
         return []
@@ -21,10 +116,7 @@ def _safe_compile(code: str):
         return None
 
 
-# =========================
 # EXECUTION ENVIRONMENT
-# =========================
-
 def _create_execution_environment():
     import collections, math, typing, heapq, itertools
     import functools, fractions, bisect, copy
@@ -93,10 +185,7 @@ def _execute_code(compiled_obj, asserts_list, extra_globals=None):
         pass
 
 
-# =========================
 # ASSERT EVALUATION
-# =========================
-
 def run_assert_block(code, asserts_raw):
     correct_asserts = []
     exception_map = {}
@@ -145,10 +234,7 @@ def run_assert_block(code, asserts_raw):
     }
 
 
-# =========================
 # LINE COVERAGE (sys.settrace)
-# =========================
-
 def calculate_line_coverage(code: str, asserts_raw: str) -> float:
 
     asserts_list = _parse_asserts(asserts_raw)
@@ -189,10 +275,7 @@ def calculate_line_coverage(code: str, asserts_raw: str) -> float:
     return round((len(covered) / len(total_lines)) * 100, 2)
 
 
-# =========================
 # BRANCH COVERAGE
-# =========================
-
 def calculate_branch_coverage(code: str, asserts_raw: str):
 
     asserts_list = _parse_asserts(asserts_raw)
@@ -283,10 +366,7 @@ def calculate_branch_coverage(code: str, asserts_raw: str):
     return round((covered / total) * 100, 2)
 
 
-# =========================
 # CONDITION COVERAGE
-# =========================
-
 def calculate_condition_coverage(code: str, asserts_raw: str):
 
     asserts_list = _parse_asserts(asserts_raw)
@@ -349,20 +429,71 @@ def calculate_condition_coverage(code: str, asserts_raw: str):
 
     return round((covered / total) * 100, 2)
 
+# AST Mutator
+def ast_mutation_testing(code: str, asserts_raw: str):
 
-# =========================
+    asserts_list = _parse_asserts(asserts_raw)
+
+    if not asserts_list:
+        return 0.0, 0, 0, []
+
+    try:
+        tree = ast.parse(code)
+    except Exception:
+        return 0.0, 0, 0, []
+
+    mutator = FastMutator(tree)
+
+    mutants = mutator.generate()
+
+    mutants_killed = 0
+    mutants_survived = 0
+    survived_types = []
+
+    for mtype, mutant_tree in mutants:
+
+        try:
+            compiled = compile(mutant_tree, "<string>", "exec")
+        except Exception:
+            continue
+
+        killed = False
+
+        for assertion in asserts_list:
+
+            exec_env = _create_execution_environment()
+
+            try:
+                exec(compiled, exec_env)
+                exec(assertion, exec_env)
+
+            except AssertionError:
+                killed = True
+                break
+
+            except Exception:
+                killed = True
+                break
+
+        if killed:
+            mutants_killed += 1
+        else:
+            mutants_survived += 1
+            survived_types.append(mtype)
+
+    total = mutants_killed + mutants_survived
+    score = round((mutants_killed / total) * 100, 2) if total else 0.0
+    return score, mutants_killed, mutants_survived, list(set(survived_types))
+
 # DATASET PROCESSING
-# =========================
-
 def evaluate_row(args):
-
-    row, assert_columns = args
+    row, columns_with_asserts = args
 
     code = row["code"].replace("from fractions import gcd", "from math import gcd")
 
     result = {"code": code}
 
-    for col in assert_columns:
+    for col in columns_with_asserts:
 
         asserts = row.get(col)
 
@@ -375,16 +506,29 @@ def evaluate_row(args):
         result[f"{model}_PassPercentage"] = r["PassPercentage"]
 
         if r["CorrectCount"] > 0:
-
+            #Coverage
             result[f"Line_coverage_{model}"] = calculate_line_coverage(code, r["Correct"])
             result[f"Branch_coverage_{model}"] = calculate_branch_coverage(code, r["Correct"])
             result[f"Condition_coverage_{model}"] = calculate_condition_coverage(code, r["Correct"])
 
-        else:
+            # MutPy
+            mutation_score, killed, survived, survived_types = ast_mutation_testing(code, r["Correct"])
+            result[f"Mutation_score_{model}"] = mutation_score
+            result[f"Mutants_killed_{model}"] = killed
+            result[f"Mutants_survived_{model}"] = survived
+            result[f"Survived_mutant_types_{model}"] = ";".join(survived_types)
 
+        else:
+            # Coverage
             result[f"Line_coverage_{model}"] = 0.0
             result[f"Branch_coverage_{model}"] = 0.0
             result[f"Condition_coverage_{model}"] = 0.0
+
+            # MutPy
+            result[f"Mutation_score_{model}"] = 0.0
+            result[f"Mutants_killed_{model}"] = 0
+            result[f"Mutants_survived_{model}"] = 0
+            result[f"Survived_mutant_types_{model}"] = ""
 
     return result
 
