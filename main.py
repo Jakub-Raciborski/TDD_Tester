@@ -416,4 +416,3 @@ if __name__ == "__main__":
     ]
 
     process_dataset(input_csv, assert_columns, output_csv)
-    
