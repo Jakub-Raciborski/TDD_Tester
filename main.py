@@ -277,6 +277,69 @@ class CoverageTransformer(ast.NodeTransformer):
         )
         return node
 
+class ConditionCoverageTransformer(ast.NodeTransformer):
+
+    def __init__(self, logger, hits):
+        self.logger = logger
+        self.hits = hits
+        self.counter = 0
+
+    def _instrument(self, node):
+
+        cid = self.counter
+        self.counter += 1
+
+        self.hits[cid] = {"true": False, "false": False}
+
+        return ast.Call(
+            func=ast.Name(id=self.logger, ctx=ast.Load()),
+            args=[ast.Constant(cid), node],
+            keywords=[]
+        )
+
+    def visit_Compare(self, node):
+        self.generic_visit(node)
+        return self._instrument(node)
+
+    def visit_BoolOp(self, node):
+        self.generic_visit(node)
+
+        new_values = []
+        for v in node.values:
+            new_values.append(self._instrument(v))
+
+        node.values = new_values
+        return node
+
+    def visit_UnaryOp(self, node):
+        self.generic_visit(node)
+
+        if isinstance(node.op, ast.Not):
+            return self._instrument(node)
+
+        return node
+
+    def visit_Name(self, node):
+
+        if isinstance(node.ctx, ast.Load):
+            return self._instrument(node)
+
+        return node
+
+    def visit_Constant(self, node):
+
+        if isinstance(node.value, bool):
+            return self._instrument(node)
+
+        return node
+
+    def visit_IfExp(self, node):
+        self.generic_visit(node)
+
+        node.test = self._instrument(node.test)
+
+        return node
+
 
 # =========================================================
 # GENERIC COVERAGE (fix 8)
@@ -325,7 +388,34 @@ def calculate_branch_coverage(code, asserts):
 
 
 def calculate_condition_coverage(code, asserts):
-    return _calculate_coverage(code, asserts, "__cond_logger")
+    asserts = _parse_asserts(asserts)
+    try:
+        tree = ast.parse(code)
+    except:
+        return 0
+    hits = {}
+    transformer = ConditionCoverageTransformer("__cond_logger", hits)
+    tree = transformer.visit(tree)
+    ast.fix_missing_locations(tree)
+
+    def cond_logger(cid, cond):
+        hits[cid]["true" if cond else "false"] = True
+        return cond
+
+    compiled = compile(tree, "<string>", "exec")
+    _execute(
+        compiled,
+        asserts,
+        {
+            "__cond_logger": cond_logger
+        }
+    )
+    total = len(hits) * 2
+    covered = sum(v for h in hits.values() for v in h.values())
+    if total == 0:
+        return 100
+
+    return round(covered / total * 100, 2)
 
 
 # =========================================================
@@ -404,15 +494,18 @@ def process_dataset(file_to_load, columns, save_csv):
 
 
 if __name__ == "__main__":
+    # Test 1 settings
     input_csv = "Test1/My_func_with_asserts.csv"
     output_csv = "Test1/Test_results.csv"
     assert_columns = [
-        "ChatGPT5_3_asserts",
+        "Claude_Sonnet_4_6_asserts",
+        "ChatGPT_5_3_asserts",
         "Gemini_3_asserts",
         "PyTester_0_examples_asserts",
         "PyTester_1_examples_asserts",
         "PyTester_2_examples_asserts",
         "PyTester_3_examples_asserts"
     ]
+
 
     process_dataset(input_csv, assert_columns, output_csv)
