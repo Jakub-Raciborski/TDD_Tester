@@ -116,6 +116,20 @@ def _parse_asserts(a):
         return []
     return [x.strip() for x in a.splitlines() if x.strip()]
 
+def filter_asserts(asserts):
+    valid = []
+    for line in asserts:
+        try:
+            tree = ast.parse(line)
+            if (
+                len(tree.body) == 1 and
+                isinstance(tree.body[0], ast.Assert)
+            ):
+                valid.append(line)
+        except:
+            continue
+    return valid
+
 
 def _safe_compile(code):
     try:
@@ -189,15 +203,28 @@ def _execute(compiled, asserts, extra=None):
 # ASSERT FILTERING
 # =========================================================
 def run_assert_block(code, asserts):
-    asserts = _parse_asserts(asserts)
+    asserts = filter_asserts(_parse_asserts(asserts))
     compiled = _safe_compile(code)
-    correct = [a for a in asserts if _execute(compiled, [a])]
+
+    correct = []
+    incorrect = []
+
+    for a in asserts:
+        if _execute(compiled, [a]):
+            correct.append(a)
+        else:
+            incorrect.append(a)
+
     total = len(asserts)
-    ok = len(correct)
+    correct_count = len(correct)
+    incorrect_count = len(incorrect)
+
     return {
         "Correct": "\n".join(correct),
-        "CorrectCount": ok,
-        "PassPercentage": round((ok / total) * 100, 2) if total else 0
+        "Incorrect": "\n".join(incorrect),
+        "CorrectCount": correct_count,
+        "IncorrectCount": incorrect_count,
+        "PassPercentage": round((correct_count / total) * 100, 2) if total else 0
     }
 
 
@@ -460,7 +487,9 @@ def evaluate_row(args):
         model = col.replace(" asserts", "").replace("-", "_")
         r = run_assert_block(code, asserts)
         result[f"{model}_Correct"] = r["Correct"]
+        result[f"{model}_Incorrect"] = r["Incorrect"]
         result[f"{model}_CorrectCount"] = r["CorrectCount"]
+        result[f"{model}_IncorrectCount"] = r["IncorrectCount"]
         result[f"{model}_PassPercentage"] = r["PassPercentage"]
         if r["CorrectCount"]:
             result[f"Line_coverage_{model}"] = calculate_line_coverage(code, r["Correct"])
@@ -495,17 +524,27 @@ def process_dataset(file_to_load, columns, save_csv):
 
 if __name__ == "__main__":
     # Test 1 settings
-    input_csv = "Test1/My_func_with_asserts.csv"
-    output_csv = "Test1/Test_results.csv"
+    input_csv = "Data/case_study_1/Test_1_data.csv"
+    output_csv = "Data/case_study_1/Test_1_results.csv"
     assert_columns = [
         "Claude_Sonnet_4_6_asserts",
-        "ChatGPT_5_3_asserts",
+        "ChatGPT_5_4_asserts",
         "Gemini_3_asserts",
         "PyTester_0_examples_asserts",
         "PyTester_1_examples_asserts",
         "PyTester_2_examples_asserts",
         "PyTester_3_examples_asserts"
     ]
+
+    # Test 3 settings
+    # input_csv = "Data/case_study_3/Test_3_data.csv"
+    # output_csv = "Data/case_study_3/prime_Test_3_results.csv"
+    # assert_columns = [
+    #     "Claude_Sonnet_4_6_asserts",
+    #     "ChatGPT_5_4_asserts",
+    #     "Gemini_3_asserts",
+    #     "PyTester_asserts"
+    # ]
 
 
     process_dataset(input_csv, assert_columns, output_csv)
