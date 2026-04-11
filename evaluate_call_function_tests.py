@@ -1,16 +1,42 @@
 import csv
 import ast
 import multiprocessing
-import io
-import contextlib
-import sys
 import copy
 import pandas as pd
 import re
+import os
+import gc
+import sys
 from tqdm import tqdm
 
 
 EXEC_TIMEOUT = 60
+BATCH_SIZE = 5
+_BASE_ENV = None
+_COVERAGE_HITS = None
+
+
+def __branch_logger(cid, cond):
+    global _COVERAGE_HITS
+    _COVERAGE_HITS[cid]["true" if cond else "false"] = True
+    return cond
+
+
+def __for_logger(cid, iterable):
+    global _COVERAGE_HITS
+    used = False
+    for x in iterable:
+        _COVERAGE_HITS[cid]["true"] = True
+        used = True
+        yield x
+    if not used:
+        _COVERAGE_HITS[cid]["false"] = True
+
+
+def __cond_logger(cid, cond):
+    global _COVERAGE_HITS
+    _COVERAGE_HITS[cid]["true" if cond else "false"] = True
+    return cond
 
 
 # =========================================================
@@ -144,24 +170,17 @@ def _solution_has_call_solution(code):
 def _clean_assert_block(asserts_raw):
     lines = _parse_asserts(asserts_raw)
     cleaned = []
-
     for line in lines:
         line = line.strip()
-
         if not line.startswith("assert"):
             continue
-
         if "==" not in line:
             continue
-
         if line.startswith("assert call_solution():"):
             continue
-
         if len(line) > 300:
             continue
-
         cleaned.append(line)
-
     return cleaned
 
 
@@ -199,13 +218,11 @@ def _rewrite_call_solution_assert(line):
         tree = ast.parse(line)
     except Exception:
         return line
-
     if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Assert):
         return line
 
     node = tree.body[0]
     test = node.test
-
     if not (
         isinstance(test, ast.Compare)
         and isinstance(test.left, ast.Call)
@@ -213,13 +230,11 @@ def _rewrite_call_solution_assert(line):
         and test.left.func.id == "call_solution"
     ):
         return line
-
     try:
         input_value = ast.literal_eval(test.left.args[0])
         expected_value = ast.literal_eval(test.comparators[0])
     except Exception:
         return line
-
     return f"assert test_call_solution({repr(input_value)}) == {repr(expected_value)}"
 
 
@@ -227,30 +242,23 @@ def _prepare_asserts(code, asserts):
     lines = _clean_assert_block(asserts)
     if not lines:
         return []
-
     prepared = []
     use_wrapper = _solution_has_call_solution(code)
-
     for line in lines:
         if use_wrapper:
             line = _rewrite_call_solution_assert(line)
-
         try:
             tree = ast.parse(line)
             if len(tree.body) == 1 and isinstance(tree.body[0], ast.Assert):
                 prepared.append(line)
         except Exception:
             continue
-
     return prepared
 
 
 # =========================================================
 # EXECUTION ENVIRONMENT
 # =========================================================
-_BASE_ENV = None
-
-
 def _env():
     global _BASE_ENV
     if _BASE_ENV is None:
@@ -382,141 +390,44 @@ class ConditionCoverageTransformer(ast.NodeTransformer):
 # =========================================================
 # PROCESS EXECUTION
 # =========================================================
-def _run_in_process(prelude_source, source_code, asserts, extra, mode, result_queue):
+def _run_in_process(prelude_source, source_code, asserts, extra, result_queue):
+    global _COVERAGE_HITS
+
     try:
+        compiled = _safe_compile(source_code)
+        if compiled is None:
+            result_queue.put(False)
+            return
+
         env = _env()
-        if extra:
-            env.update(extra)
+        env["__branch_logger"] = __branch_logger
+        env["__for_logger"] = __for_logger
+        env["__cond_logger"] = __cond_logger
 
-        fake_out = io.StringIO()
+        if prelude_source:
+            exec(prelude_source, env)
 
-        with contextlib.redirect_stdout(fake_out), contextlib.redirect_stderr(fake_out):
-            if prelude_source:
-                exec(prelude_source, env)
+        if extra and "hits" in extra:
+            _COVERAGE_HITS = extra["hits"]
 
-            if mode == "line":
-                compiled = _safe_compile(source_code)
-                if compiled is None:
-                    result_queue.put(set())
-                    return
+        try:
+            exec(compiled, env)
+            for a in asserts:
+                exec(a, env)
 
-                executed = set()
-
-                def tracer(frame, event, arg):
-                    if event == "line" and frame.f_code.co_filename == "<string>":
-                        executed.add(frame.f_lineno)
-                    return tracer
-
-                try:
-                    sys.settrace(tracer)
-                    exec(compiled, env)
-                    for a in asserts:
-                        try:
-                            exec(a, env)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-                finally:
-                    sys.settrace(None)
-
-                result_queue.put(executed)
-                return
-
-            if mode == "branch":
-                try:
-                    tree = ast.parse(source_code)
-                except Exception:
-                    result_queue.put({})
-                    return
-
-                hits = {}
-                transformer = CoverageTransformer("__branch_logger", hits)
-                tree = transformer.visit(tree)
-                ast.fix_missing_locations(tree)
-                compiled = compile(tree, "<string>", "exec")
-
-                def logger(cid, cond):
-                    hits[cid]["true" if cond else "false"] = True
-                    return cond
-
-                def for_logger(cid, iterable):
-                    used = False
-                    for x in iterable:
-                        hits[cid]["true"] = True
-                        used = True
-                        yield x
-                    if not used:
-                        hits[cid]["false"] = True
-
-                env["__branch_logger"] = logger
-                env["__for_logger"] = for_logger
-
-                try:
-                    exec(compiled, env)
-                    for a in asserts:
-                        try:
-                            exec(a, env)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-
-                result_queue.put(hits)
-                return
-
-            if mode == "condition":
-                try:
-                    tree = ast.parse(source_code)
-                except Exception:
-                    result_queue.put({})
-                    return
-
-                hits = {}
-                transformer = ConditionCoverageTransformer("__cond_logger", hits)
-                tree = transformer.visit(tree)
-                ast.fix_missing_locations(tree)
-                compiled = compile(tree, "<string>", "exec")
-
-                def cond_logger(cid, cond):
-                    hits[cid]["true" if cond else "false"] = True
-                    return cond
-
-                env["__cond_logger"] = cond_logger
-
-                try:
-                    exec(compiled, env)
-                    for a in asserts:
-                        try:
-                            exec(a, env)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-
-                result_queue.put(hits)
-                return
-
-            compiled = _safe_compile(source_code)
-            if compiled is None:
-                result_queue.put(False)
-                return
-
-            try:
-                exec(compiled, env)
-                for a in asserts:
-                    exec(a, env)
+            if extra and "hits" in extra:
+                result_queue.put(_COVERAGE_HITS)
+            else:
                 result_queue.put(True)
-            except Exception:
+
+        except Exception:
+            if extra and "hits" in extra:
+                result_queue.put(_COVERAGE_HITS)
+            else:
                 result_queue.put(False)
 
     except Exception:
-        if mode == "line":
-            result_queue.put(set())
-        elif mode in {"branch", "condition"}:
-            result_queue.put({})
-        else:
-            result_queue.put(False)
+        result_queue.put(False)
 
 
 def _execute(source_code, asserts, extra=None, prelude=None):
@@ -525,7 +436,7 @@ def _execute(source_code, asserts, extra=None, prelude=None):
 
     p = ctx.Process(
         target=_run_in_process,
-        args=(prelude or "", source_code, asserts, extra, "bool", result_queue),
+        args=(prelude or "", source_code, asserts, extra, result_queue)
     )
 
     p.start()
@@ -540,29 +451,6 @@ def _execute(source_code, asserts, extra=None, prelude=None):
         return result_queue.get_nowait()
     except Exception:
         return False
-
-
-def _collect_coverage(source_code, asserts, mode, prelude=None, extra=None):
-    ctx = multiprocessing.get_context("spawn")
-    result_queue = ctx.Queue()
-
-    p = ctx.Process(
-        target=_run_in_process,
-        args=(prelude or "", source_code, asserts, extra, mode, result_queue),
-    )
-
-    p.start()
-    p.join(EXEC_TIMEOUT)
-
-    if p.is_alive():
-        p.terminate()
-        p.join()
-        return set() if mode == "line" else {}
-
-    try:
-        return result_queue.get_nowait()
-    except Exception:
-        return set() if mode == "line" else {}
 
 
 # =========================================================
@@ -604,6 +492,40 @@ def run_assert_block(code, asserts):
 # =========================================================
 # LINE / BRANCH / CONDITION COVERAGE
 # =========================================================
+def _line_worker(prelude_source, source_code, asserts, result_queue):
+    try:
+        compiled = _safe_compile(source_code)
+        if compiled is None:
+            result_queue.put(set())
+            return
+
+        executed = set()
+
+        def tracer(frame, event, arg):
+            if event == "line" and frame.f_code.co_filename == "<string>":
+                executed.add(frame.f_lineno)
+            return tracer
+
+        env = _env()
+        if prelude_source:
+            exec(prelude_source, env)
+
+        sys.settrace(tracer)
+        try:
+            exec(compiled, env)
+            for a in asserts:
+                try:
+                    exec(a, env)
+                except Exception:
+                    pass
+        finally:
+            sys.settrace(None)
+
+        result_queue.put(executed)
+
+    except Exception:
+        result_queue.put(set())
+
 def calculate_line_coverage(code, asserts):
     prelude = _make_io_wrapper(code)
     asserts = _prepare_asserts(code, asserts)
@@ -612,7 +534,26 @@ def calculate_line_coverage(code, asserts):
     if not compiled:
         return 0
 
-    executed = _collect_coverage(code, asserts, "line", prelude=prelude)
+    ctx = multiprocessing.get_context("spawn")
+    result_queue = ctx.Queue()
+
+    p = ctx.Process(
+        target=_line_worker,
+        args=(prelude, code, asserts, result_queue)
+    )
+
+    p.start()
+    p.join(EXEC_TIMEOUT)
+
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        return 0
+
+    try:
+        executed = result_queue.get_nowait()
+    except Exception:
+        return 0
 
     lines = {
         i + 1
@@ -625,17 +566,28 @@ def calculate_line_coverage(code, asserts):
 
     return round(len(lines & executed) / len(lines) * 100, 2)
 
-
 def calculate_branch_coverage(code, asserts):
     prelude = _make_io_wrapper(code)
     asserts = _prepare_asserts(code, asserts)
 
     try:
-        ast.parse(code)
+        tree = ast.parse(code)
     except Exception:
         return 0
 
-    hits = _collect_coverage(code, asserts, "branch", prelude=prelude)
+    hits = {}
+    t = CoverageTransformer("__branch_logger", hits)
+    tree = t.visit(tree)
+    ast.fix_missing_locations(tree)
+
+    source = ast.unparse(tree)
+
+    result = _execute(source, asserts, {"hits": hits}, prelude=prelude)
+
+    if result is False:
+        return 0
+
+    hits = result
     total = len(hits) * 2
     covered = sum(v for h in hits.values() for v in h.values())
 
@@ -647,11 +599,23 @@ def calculate_condition_coverage(code, asserts):
     asserts = _prepare_asserts(code, asserts)
 
     try:
-        ast.parse(code)
+        tree = ast.parse(code)
     except Exception:
         return 0
 
-    hits = _collect_coverage(code, asserts, "condition", prelude=prelude)
+    hits = {}
+    transformer = ConditionCoverageTransformer("__cond_logger", hits)
+    tree = transformer.visit(tree)
+    ast.fix_missing_locations(tree)
+
+    source = ast.unparse(tree)
+
+    result = _execute(source, asserts, {"hits": hits}, prelude=prelude)
+
+    if result is False:
+        return 0
+
+    hits = result
     total = len(hits) * 2
     covered = sum(v for h in hits.values() for v in h.values())
 
@@ -731,24 +695,83 @@ def evaluate_row(args):
     return result
 
 
-def process_dataset(file_to_load, columns, save_csv):
+def process_dataset(
+    file_to_load,
+    columns,
+    save_csv,
+    start_index=0,
+    force_restart=False
+):
     csv.field_size_limit(10**8)
+
     with open(file_to_load, encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+
+    total = len(rows)
 
     if not rows:
         return
 
-    results = [
-        evaluate_row((r, columns))
-        for r in tqdm(rows, desc="Processing dataset", unit="row")
-    ]
+    # =========================================================
+    # RESUME / RESTART LOGIC
+    # =========================================================
+    if force_restart and os.path.exists(save_csv):
+        os.remove(save_csv)
 
-    with open(save_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=results[0].keys())
-        writer.writeheader()
-        writer.writerows(results)
+    if os.path.exists(save_csv) and not force_restart:
+        with open(save_csv, encoding="utf-8") as f:
+            existing = list(csv.DictReader(f))
 
+        if existing:
+            start_index = len(existing)
+            print(f"[RESUME] Starting from index {start_index}")
+
+    results_buffer = []
+
+    # =========================================================
+    # MAIN LOOP + PROGRESS BAR
+    # =========================================================
+    for i in tqdm(range(start_index, total), desc="Processing dataset", unit="row"):
+
+        row = rows[i]
+        result = evaluate_row((row, columns))
+        results_buffer.append(result)
+
+        # =====================================================
+        # SAVE EVERY BATCH
+        # =====================================================
+        if len(results_buffer) >= BATCH_SIZE or i == total - 1:
+
+            write_header = not os.path.exists(save_csv)
+            mode = "a" if os.path.exists(save_csv) else "w"
+
+            with open(save_csv, mode, newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=results_buffer[0].keys()
+                )
+
+                if write_header:
+                    writer.writeheader()
+
+                writer.writerows(results_buffer)
+
+            # wyczyść bufor
+            results_buffer.clear()
+
+            # =====================================================
+            # HARD CLEANUP
+            # =====================================================
+            gc.collect()
+
+            # WAŻNE: wymuszenie zamknięcia zasobów multiprocessing
+            try:
+                multiprocessing.active_children()
+                for p in multiprocessing.active_children():
+                    p.terminate()
+                    p.join()
+            except Exception:
+                pass
 
 input_csv = "Data/case_study_3/Test_3_data.csv"
 output_csv = "Data/case_study_3/Test_3_data_cleaned.csv"
@@ -756,7 +779,7 @@ cleaned_input_csv = "Data/case_study_3/Test_3_data_cleaned.csv"
 results_output_csv = "Data/case_study_3/Test_3_results.csv"
 
 assert_columns = [
-    "Claude_Sonnet_4_6_assert",
+    "Claude_Sonnet_4_6_asserts",
     "ChatGPT_5_4_asserts",
     "Gemini_3_asserts",
     "PyTester_asserts",
@@ -785,6 +808,7 @@ def normalize_assert_calls(text):
     return "\n".join(new_lines)
 
 
+
 def extract_asserts(text):
     if pd.isna(text):
         return text
@@ -796,7 +820,7 @@ def extract_asserts(text):
     return "\n".join(matches)
 
 
-def main():
+def second_main():
     df = pd.read_csv(input_csv)
     for col in assert_columns:
         if col in df.columns:
@@ -812,4 +836,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    second_main()

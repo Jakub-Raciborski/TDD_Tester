@@ -2,11 +2,38 @@ import csv
 import ast
 import sys
 import copy
-from multiprocessing import Pool, cpu_count
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+import os
+import gc
+from tqdm import tqdm
+import multiprocessing
 
-EXEC_TIMEOUT = 60
+EXEC_TIMEOUT = 10
+BATCH_SIZE = 5
+_BASE_ENV = None
+_COVERAGE_HITS = None
 
+
+def __branch_logger(cid, cond):
+    global _COVERAGE_HITS
+    _COVERAGE_HITS[cid]["true" if cond else "false"] = True
+    return cond
+
+
+def __for_logger(cid, iterable):
+    global _COVERAGE_HITS
+    used = False
+    for x in iterable:
+        _COVERAGE_HITS[cid]["true"] = True
+        used = True
+        yield x
+    if not used:
+        _COVERAGE_HITS[cid]["false"] = True
+
+
+def __cond_logger(cid, cond):
+    global _COVERAGE_HITS
+    _COVERAGE_HITS[cid]["true" if cond else "false"] = True
+    return cond
 
 # =========================================================
 # FAST AST MUTATOR
@@ -141,9 +168,6 @@ def _safe_compile(code):
 # =========================================================
 # EXECUTION ENVIRONMENT  (fix 7)
 # =========================================================
-_BASE_ENV = None
-
-
 def _env():
     global _BASE_ENV
     if _BASE_ENV is None:
@@ -176,27 +200,98 @@ def _env():
 
 
 # =========================================================
-# EXECUTION WITH TIMEOUT
+# EXECUTION WITH TIMEOUT (PROCESS-BASED)
 # =========================================================
-def _execute(compiled, asserts, extra=None):
-    def run():
+def _run_in_process(source_code, asserts, extra, result_queue):
+    global _COVERAGE_HITS
+
+    try:
+        compiled = _safe_compile(source_code)
+        if compiled is None:
+            result_queue.put(False)
+            return
+
         env = _env()
+        env["__branch_logger"] = __branch_logger
+        env["__for_logger"] = __for_logger
+        env["__cond_logger"] = __cond_logger
+
         if extra:
-            env.update(extra)
+            if "hits" in extra:
+                _COVERAGE_HITS = extra["hits"]
+
         try:
             exec(compiled, env)
             for a in asserts:
                 exec(a, env)
-            return True
-        except Exception:
-            return False
 
-    with ThreadPoolExecutor(1) as ex:
-        f = ex.submit(run)
+            if extra and "hits" in extra:
+                result_queue.put(_COVERAGE_HITS)
+            else:
+                result_queue.put(True)
+
+        except Exception:
+            if extra and "hits" in extra:
+                result_queue.put(_COVERAGE_HITS)
+            else:
+                result_queue.put(False)
+
+    except Exception:
+        result_queue.put(False)
+
+def _line_worker(source_code, asserts, result_queue):
+    try:
+        compiled_local = _safe_compile(source_code)
+        if compiled_local is None:
+            result_queue.put(set())
+            return
+
+        executed = set()
+
+        def tracer(frame, event, arg):
+            if event == "line" and frame.f_code.co_filename == "<string>":
+                executed.add(frame.f_lineno)
+            return tracer
+
+        env = _env()
+        sys.settrace(tracer)
         try:
-            return f.result(timeout=EXEC_TIMEOUT)
-        except TimeoutError:
-            return False
+            exec(compiled_local, env)
+            for a in asserts:
+                try:
+                    exec(a, env)
+                except Exception:
+                    pass
+        finally:
+            sys.settrace(None)
+
+        result_queue.put(executed)
+
+    except Exception:
+        result_queue.put(set())
+
+
+def _execute(source_code, asserts, extra=None):
+    ctx = multiprocessing.get_context("spawn")
+    result_queue = ctx.Queue()
+
+    p = ctx.Process(
+        target=_run_in_process,
+        args=(source_code, asserts, extra, result_queue)
+    )
+
+    p.start()
+    p.join(EXEC_TIMEOUT)
+
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        return False
+
+    try:
+        return result_queue.get_nowait()
+    except Exception:
+        return False
 
 
 # =========================================================
@@ -209,8 +304,17 @@ def run_assert_block(code, asserts):
     correct = []
     incorrect = []
 
+    if not compiled:
+        return {
+            "Correct": "",
+            "Incorrect": "\n".join(asserts),
+            "CorrectCount": 0,
+            "IncorrectCount": len(asserts),
+            "PassPercentage": 0
+        }
+
     for a in asserts:
-        if _execute(compiled, [a]):
+        if _execute(code, [a]):
             correct.append(a)
         else:
             incorrect.append(a)
@@ -236,30 +340,37 @@ def calculate_line_coverage(code, asserts):
     compiled = _safe_compile(code)
     if not compiled:
         return 0
-    executed = set()
-    def tracer(frame, event, arg):
-        if event == "line" and frame.f_code.co_filename == "<string>":
-            executed.add(frame.f_lineno)
-        return tracer
 
-    env = _env()
-    sys.settrace(tracer)
+    ctx = multiprocessing.get_context("spawn")
+    result_queue = ctx.Queue()
+
+    p = ctx.Process(
+        target=_line_worker,
+        args=(code, asserts, result_queue)
+    )
+
+    p.start()
+    p.join(EXEC_TIMEOUT)
+
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        return 0
+
     try:
-        exec(compiled, env)
-        for a in asserts:
-            try:
-                exec(a, env)
-            except:
-                pass
-    finally:
-        sys.settrace(None)
+        executed = result_queue.get_nowait()
+    except Exception:
+        return 0
+
     lines = {
         i + 1
         for i, l in enumerate(code.splitlines())
         if l.strip() and not l.strip().startswith("#")
     }
+
     if not lines:
         return 0
+
     return round(len(lines & executed) / len(lines) * 100, 2)
 
 
@@ -377,36 +488,30 @@ def _calculate_coverage(code, asserts, logger_name):
         tree = ast.parse(code)
     except:
         return 0
+
     hits = {}
     t = CoverageTransformer(logger_name, hits)
     tree = t.visit(tree)
     ast.fix_missing_locations(tree)
 
-    def logger(cid, cond):
-        hits[cid]["true" if cond else "false"] = True
-        return cond
+    source = ast.unparse(tree)
 
-    def for_logger(cid, iterable):
-        used = False
-        for x in iterable:
-            hits[cid]["true"] = True
-            used = True
-            yield x
-        if not used:
-            hits[cid]["false"] = True
-
-    compiled = compile(tree, "<string>", "exec")
-    _execute(
-        compiled,
+    result = _execute(
+        source,
         asserts,
         {
-            logger_name: logger,
-            "__for_logger": for_logger
+            "hits": hits
         }
     )
 
+    if result is False:
+        return 0
+
+    hits = result
+
     total = len(hits) * 2
     covered = sum(v for h in hits.values() for v in h.values())
+
     return 100 if total == 0 else round(covered / total * 100, 2)
 
 
@@ -425,18 +530,18 @@ def calculate_condition_coverage(code, asserts):
     tree = transformer.visit(tree)
     ast.fix_missing_locations(tree)
 
-    def cond_logger(cid, cond):
-        hits[cid]["true" if cond else "false"] = True
-        return cond
-
-    compiled = compile(tree, "<string>", "exec")
-    _execute(
-        compiled,
+    source = ast.unparse(tree)
+    result = _execute(
+        source,
         asserts,
         {
-            "__cond_logger": cond_logger
+            "hits": hits
         }
     )
+    if result is False:
+        return 0
+
+    hits = result
     total = len(hits) * 2
     covered = sum(v for h in hits.values() for v in h.values())
     if total == 0:
@@ -460,10 +565,12 @@ def ast_mutation_testing(code, asserts):
     types = []
     for t, m in mutants:
         try:
-            compiled = compile(m, "<string>", "exec")
+            mutant_source = ast.unparse(m)
         except:
             continue
-        dead = not _execute(compiled, asserts)
+
+        dead = not _execute(mutant_source, asserts)
+
         if dead:
             killed += 1
         else:
@@ -510,16 +617,79 @@ def evaluate_row(args):
     return result
 
 
-def process_dataset(file_to_load, columns, save_csv):
+def process_dataset(
+    file_to_load,
+    columns,
+    save_csv,
+    start_index=0
+):
     csv.field_size_limit(10**8)
+
     with open(file_to_load, encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    with Pool(cpu_count()) as pool:
-        results = pool.map(evaluate_row, [(r, columns) for r in rows])
-    with open(save_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=results[0].keys())
-        writer.writeheader()
-        writer.writerows(results)
+
+    total = len(rows)
+
+    # =========================
+    # RESUME SUPPORT
+    # =========================
+    if os.path.exists(save_csv):
+        existing = []
+        with open(save_csv, encoding="utf-8") as f:
+            existing = list(csv.DictReader(f))
+
+        if existing:
+            start_index = len(existing)
+            print(f"[RESUME] Starting from index {start_index}")
+
+    results_buffer = []
+
+    # =========================
+    # MAIN LOOP + PROGRESS BAR
+    # =========================
+    for i in tqdm(range(start_index, total), desc="Processing", unit="row"):
+        row = rows[i]
+
+        result = evaluate_row((row, columns))
+        results_buffer.append(result)
+
+        # =========================
+        # BATCH SAVE
+        # =========================
+        if len(results_buffer) >= BATCH_SIZE or i == total - 1:
+
+            write_header = not os.path.exists(save_csv)
+
+            with open(save_csv, "a", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=results_buffer[0].keys()
+                )
+
+                if write_header:
+                    writer.writeheader()
+
+                writer.writerows(results_buffer)
+
+            results_buffer.clear()
+
+            # =========================
+            # MEMORY CLEANUP
+            # =========================
+            gc.collect()
+
+
+def first_main():
+    # Test 4 settings
+    input_csv = "Data/case_study_4/Test_4_data.csv"
+    output_csv = "Data/case_study_4/Test_4_results.csv"
+    assert_columns = [
+        "Claude_Sonnet_4_6_asserts",
+        "ChatGPT_5_4_asserts",
+        "Gemini_3_asserts",
+    ]
+
+    process_dataset(input_csv, assert_columns, output_csv, start_index=0)
 
 
 if __name__ == "__main__":
@@ -536,15 +706,12 @@ if __name__ == "__main__":
         "PyTester_3_examples_asserts"
     ]
 
-    # Test 3 settings
-    # input_csv = "Data/case_study_3/Test_3_data.csv"
-    # output_csv = "Data/case_study_3/prime_Test_3_results.csv"
+    # # Test 4 settings
+    # input_csv = "Data/case_study_4/Test_4_data.csv"
+    # output_csv = "Data/case_study_4/Test_4_results.csv"
     # assert_columns = [
     #     "Claude_Sonnet_4_6_asserts",
     #     "ChatGPT_5_4_asserts",
     #     "Gemini_3_asserts",
-    #     "PyTester_asserts"
     # ]
-
-
     process_dataset(input_csv, assert_columns, output_csv)
