@@ -1,13 +1,14 @@
 import csv
 import ast
 import multiprocessing
-import copy
 import pandas as pd
 import re
 import os
 import gc
 import sys
+from pathlib import Path
 from tqdm import tqdm
+from fast_mutator import FastMutator
 
 
 EXEC_TIMEOUT = 60
@@ -38,106 +39,6 @@ def __cond_logger(cid, cond):
     _COVERAGE_HITS[cid]["true" if cond else "false"] = True
     return cond
 
-
-# =========================================================
-# FAST AST MUTATOR
-# =========================================================
-class FastMutator:
-    def __init__(self, tree):
-        self.tree = tree
-        self.mutants = []
-
-    def generate(self):
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.BinOp):
-                repl = {
-                    ast.Add: ast.Sub,
-                    ast.Sub: ast.Add,
-                    ast.Mult: ast.Div,
-                    ast.Div: ast.Mult,
-                    ast.FloorDiv: ast.Mult,
-                }
-                self._mutate(node, repl, "AOR")
-
-            if isinstance(node, ast.Compare):
-                repl = {
-                    ast.Gt: ast.GtE,
-                    ast.GtE: ast.Gt,
-                    ast.Lt: ast.LtE,
-                    ast.LtE: ast.Lt,
-                    ast.Eq: ast.NotEq,
-                    ast.NotEq: ast.Eq,
-                }
-                for i, op in enumerate(node.ops):
-                    for src, dst in repl.items():
-                        if isinstance(op, src):
-                            new = copy.deepcopy(self.tree)
-                            t = self._find(new, node)
-                            if t and i < len(t.ops):
-                                t.ops[i] = dst()
-                                self._add(new, "ROR")
-
-            if isinstance(node, ast.BoolOp):
-                repl = {
-                    ast.And: ast.Or,
-                    ast.Or: ast.And,
-                }
-                self._mutate(node, repl, "LCR")
-
-            if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.op = ast.UAdd()
-                    self._add(new, "UOI")
-
-            if isinstance(node, ast.Constant):
-                if isinstance(node.value, (int, float)) and node.value != 0:
-                    new = copy.deepcopy(self.tree)
-                    t = self._find(new, node)
-                    if t:
-                        t.value = 0
-                        self._add(new, "CRP")
-
-                if isinstance(node.value, bool):
-                    new = copy.deepcopy(self.tree)
-                    t = self._find(new, node)
-                    if t:
-                        t.value = not node.value
-                        self._add(new, "BLR")
-
-            if isinstance(node, ast.If):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.test = ast.UnaryOp(op=ast.Not(), operand=t.test)
-                    self._add(new, "NEG")
-
-        return self.mutants
-
-    def _mutate(self, node, repl, label):
-        for src, dst in repl.items():
-            if hasattr(node, "op") and isinstance(node.op, src):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.op = dst()
-                    self._add(new, label)
-
-    def _add(self, tree, label):
-        ast.fix_missing_locations(tree)
-        self.mutants.append((label, tree))
-
-    @staticmethod
-    def _find(tree, original):
-        for n in ast.walk(tree):
-            if (
-                type(n) == type(original)
-                and getattr(n, "lineno", None) == getattr(original, "lineno", None)
-                and getattr(n, "col_offset", None) == getattr(original, "col_offset", None)
-            ):
-                return n
-        return None
 
 
 # =========================================================
@@ -625,6 +526,14 @@ def calculate_condition_coverage(code, asserts):
 # =========================================================
 # MUTATION TESTING
 # =========================================================
+def format_map(m):
+    result = []
+    for label in sorted(m.keys()):
+        lines = sorted(m[label])
+        lines_str = ", ".join(map(str, lines))
+        result.append(f"{label} - {lines_str}")
+    return ";".join(result)
+
 def ast_mutation_testing(code, asserts):
     prelude = _make_io_wrapper(code)
     asserts = _prepare_asserts(code, asserts)
@@ -635,10 +544,13 @@ def ast_mutation_testing(code, asserts):
         return 0, 0, 0, []
 
     mutants = FastMutator(tree).generate()
-    killed = survived = 0
-    types = []
 
-    for t, m in mutants:
+    killed = survived = 0
+    killed_map = {}
+    survived_map = {}
+
+    for mutant in mutants:
+        t, line, m = mutant
         try:
             mutant_source = ast.unparse(m)
         except Exception:
@@ -647,13 +559,22 @@ def ast_mutation_testing(code, asserts):
         dead = not _execute(mutant_source, asserts, prelude=prelude)
         if dead:
             killed += 1
+            if line is not None:
+                killed_map.setdefault(t, set()).add(line)
         else:
             survived += 1
-            types.append(t)
+            if line is not None:
+                survived_map.setdefault(t, set()).add(line)
 
     total = killed + survived
     score = round(killed / total * 100, 2) if total else 0
-    return score, killed, survived, list(set(types))
+    return (
+        score,
+        killed,
+        survived,
+        format_map(survived_map),
+        format_map(killed_map),
+    )
 
 
 # =========================================================
@@ -679,11 +600,12 @@ def evaluate_row(args):
             result[f"Line_coverage_{model}"] = calculate_line_coverage(code, r["Correct"])
             result[f"Branch_coverage_{model}"] = calculate_branch_coverage(code, r["Correct"])
             result[f"Condition_coverage_{model}"] = calculate_condition_coverage(code, r["Correct"])
-            s, k, sv, t = ast_mutation_testing(code, r["Correct"])
+            s, k, sv, survived_str, killed_str = ast_mutation_testing(code, r["Correct"])
             result[f"Mutation_score_{model}"] = s
             result[f"Mutants_killed_{model}"] = k
             result[f"Mutants_survived_{model}"] = sv
-            result[f"Survived_mutant_types_{model}"] = ";".join(t)
+            result[f"Survived_mutant_types_{model}"] = survived_str
+            result[f"Killed_mutant_types_{model}"] = killed_str
         else:
             for m in ["Line", "Branch", "Condition"]:
                 result[f"{m}_coverage_{model}"] = 0
@@ -691,6 +613,7 @@ def evaluate_row(args):
             result[f"Mutants_killed_{model}"] = 0
             result[f"Mutants_survived_{model}"] = 0
             result[f"Survived_mutant_types_{model}"] = ""
+            result[f"Killed_mutant_types_{model}"] = ""
 
     return result
 
@@ -820,7 +743,10 @@ def extract_asserts(text):
     return "\n".join(matches)
 
 
-def second_main():
+def evaluate_asserts():
+    if Path(output_csv).is_file():
+        print(f"Delete {output_csv} before starting.")
+        return
     df = pd.read_csv(input_csv)
     for col in assert_columns:
         if col in df.columns:
@@ -836,4 +762,4 @@ def second_main():
 
 
 if __name__ == "__main__":
-    second_main()
+    evaluate_asserts()

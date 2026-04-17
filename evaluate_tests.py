@@ -1,11 +1,12 @@
 import csv
 import ast
 import sys
-import copy
+import multiprocessing
 import os
 import gc
+from pathlib import Path
 from tqdm import tqdm
-import multiprocessing
+from fast_mutator import FastMutator
 
 EXEC_TIMEOUT = 10
 BATCH_SIZE = 5
@@ -34,106 +35,6 @@ def __cond_logger(cid, cond):
     global _COVERAGE_HITS
     _COVERAGE_HITS[cid]["true" if cond else "false"] = True
     return cond
-
-# =========================================================
-# FAST AST MUTATOR
-# =========================================================
-class FastMutator:
-    def __init__(self, tree):
-        self.tree = tree
-        self.mutants = []
-
-    def generate(self):
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.BinOp):
-                repl = {
-                    ast.Add: ast.Sub,
-                    ast.Sub: ast.Add,
-                    ast.Mult: ast.Div,
-                    ast.Div: ast.Mult,
-                    ast.FloorDiv: ast.Mult
-                }
-                self._mutate(node, repl, "AOR")
-
-            if isinstance(node, ast.Compare):
-                repl = {
-                    ast.Gt: ast.GtE,
-                    ast.GtE: ast.Gt,
-                    ast.Lt: ast.LtE,
-                    ast.LtE: ast.Lt,
-                    ast.Eq: ast.NotEq,
-                    ast.NotEq: ast.Eq
-                }
-                for i, op in enumerate(node.ops):
-                    for src, dst in repl.items():
-                        if isinstance(op, src):
-                            new = copy.deepcopy(self.tree)
-                            t = self._find(new, node)
-                            if t and i < len(t.ops):
-                                t.ops[i] = dst()
-                                self._add(new, "ROR")
-
-            if isinstance(node, ast.BoolOp):
-                repl = {
-                    ast.And: ast.Or,
-                    ast.Or: ast.And
-                }
-                self._mutate(node, repl, "LCR")
-
-            if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.op = ast.UAdd()
-                    self._add(new, "UOI")
-
-            if isinstance(node, ast.Constant):
-                if isinstance(node.value, (int, float)) and node.value != 0:
-                    new = copy.deepcopy(self.tree)
-                    t = self._find(new, node)
-                    if t:
-                        t.value = 0
-                        self._add(new, "CRP")
-
-                if isinstance(node.value, bool):
-                    new = copy.deepcopy(self.tree)
-                    t = self._find(new, node)
-                    if t:
-                        t.value = not node.value
-                        self._add(new, "BLR")
-
-            if isinstance(node, ast.If):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.test = ast.UnaryOp(op=ast.Not(), operand=t.test)
-                    self._add(new, "NEG")
-        return self.mutants
-
-    def _mutate(self, node, repl, label):
-        for src, dst in repl.items():
-            if hasattr(node, "op") and isinstance(node.op, src):
-                new = copy.deepcopy(self.tree)
-                t = self._find(new, node)
-                if t:
-                    t.op = dst()
-                    self._add(new, label)
-
-    def _add(self, tree, label):
-        ast.fix_missing_locations(tree)
-        self.mutants.append((label, tree))
-
-    @staticmethod
-    def _find(tree, original):
-        for n in ast.walk(tree):
-            if (
-                type(n) == type(original)
-                and getattr(n, "lineno", None) == getattr(original, "lineno", None)
-                and getattr(n, "col_offset", None) == getattr(original, "col_offset", None)
-            ):
-                return n
-        return None
-
 
 # =========================================================
 # ASSERT UTILS
@@ -297,17 +198,118 @@ def _execute(source_code, asserts, extra=None):
 # =========================================================
 # ASSERT FILTERING
 # =========================================================
+def _compile_expr(node):
+    expr = ast.Expression(node)
+    ast.fix_missing_locations(expr)
+    return compile(expr, "<assert-diagnose>", "eval")
+
+
+def _compare_symbol(op):
+    return {
+        ast.Eq: "==",
+        ast.NotEq: "!=",
+        ast.Lt: "<",
+        ast.LtE: "<=",
+        ast.Gt: ">",
+        ast.GtE: ">=",
+        ast.In: "in",
+        ast.NotIn: "not in",
+        ast.Is: "is",
+        ast.IsNot: "is not",
+    }.get(type(op), "?")
+
+
+def _compare_ok(op, left, right):
+    if isinstance(op, ast.Eq):
+        return left == right
+    if isinstance(op, ast.NotEq):
+        return left != right
+    if isinstance(op, ast.Lt):
+        return left < right
+    if isinstance(op, ast.LtE):
+        return left <= right
+    if isinstance(op, ast.Gt):
+        return left > right
+    if isinstance(op, ast.GtE):
+        return left >= right
+    if isinstance(op, ast.In):
+        return left in right
+    if isinstance(op, ast.NotIn):
+        return left not in right
+    if isinstance(op, ast.Is):
+        return left is right
+    if isinstance(op, ast.IsNot):
+        return left is not right
+    return False
+
+
+def _describe_failed_assert(assertion, env):
+    """
+    Return assertions with reason of fail
+    """
+    try:
+        tree = ast.parse(assertion)
+        node = tree.body[0]
+        if not isinstance(node, ast.Assert):
+            return f"{assertion}  # invalid assert"
+
+        test = node.test
+        if isinstance(test, ast.Compare) and len(test.ops) >= 1:
+            left_val = eval(_compile_expr(test.left), env)
+            prev_val = left_val
+
+            for op, comp in zip(test.ops, test.comparators):
+                right_val = eval(_compile_expr(comp), env)
+                if not _compare_ok(op, prev_val, right_val):
+                    sym = _compare_symbol(op)
+                    if isinstance(op, ast.Eq):
+                        return f"{assertion}  # expected {right_val!r}, got {prev_val!r}"
+                    if isinstance(op, ast.NotEq):
+                        return f"{assertion}  # values are equal: {prev_val!r}"
+                    return f"{assertion}  # comparison failed: {prev_val!r} {sym} {right_val!r}"
+
+                prev_val = right_val
+            return f"{assertion}  # assertion failed"
+
+        value = eval(_compile_expr(test), env)
+        return f"{assertion}  # expression evaluated to {value!r}"
+
+    except Exception as e:
+        return f"{assertion}  # error while diagnosing failure: {type(e).__name__}: {e}"
+
+
+def _diagnose_assertion(code, assertion):
+    compiled = _safe_compile(code)
+    if not compiled:
+        return f"{assertion}  # code could not be compiled"
+
+    env = _env()
+
+    try:
+        exec(compiled, env)
+    except Exception as e:
+        return f"{assertion}  # code execution failed: {type(e).__name__}: {e}"
+
+    try:
+        exec(assertion, env)
+        return assertion
+    except AssertionError:
+        return _describe_failed_assert(assertion, env)
+    except Exception as e:
+        return f"{assertion}  # error while evaluating: {type(e).__name__}: {e}"
+
+
 def run_assert_block(code, asserts):
     asserts = filter_asserts(_parse_asserts(asserts))
     compiled = _safe_compile(code)
-
     correct = []
     incorrect = []
-
     if not compiled:
         return {
             "Correct": "",
-            "Incorrect": "\n".join(asserts),
+            "Incorrect": "\n".join(
+                f"{a}  # code could not be compiled" for a in asserts
+            ),
             "CorrectCount": 0,
             "IncorrectCount": len(asserts),
             "PassPercentage": 0
@@ -317,12 +319,11 @@ def run_assert_block(code, asserts):
         if _execute(code, [a]):
             correct.append(a)
         else:
-            incorrect.append(a)
+            incorrect.append(_diagnose_assertion(code, a))
 
     total = len(asserts)
     correct_count = len(correct)
     incorrect_count = len(incorrect)
-
     return {
         "Correct": "\n".join(correct),
         "Incorrect": "\n".join(incorrect),
@@ -562,24 +563,30 @@ def ast_mutation_testing(code, asserts):
 
     mutants = FastMutator(tree).generate()
     killed = survived = 0
-    types = []
-    for t, m in mutants:
+    survived_map = {}
+    for t, line_no, m in mutants:
         try:
             mutant_source = ast.unparse(m)
         except:
             continue
 
         dead = not _execute(mutant_source, asserts)
-
         if dead:
             killed += 1
         else:
             survived += 1
-            types.append(t)
+            if line_no is None:
+                line_no = "?"
+            survived_map.setdefault(t, set()).add(line_no)
 
     total = killed + survived
     score = round(killed / total * 100, 2) if total else 0
-    return score, killed, survived, list(set(types))
+    survived_types = []
+    for label in sorted(survived_map.keys()):
+        lines = sorted(survived_map[label], key=lambda x: (str(x)))
+        lines_str = ", ".join(str(x) for x in lines)
+        survived_types.append(f"{label} - {lines_str}")
+    return score, killed, survived, survived_types
 
 
 # =========================================================
@@ -714,4 +721,8 @@ if __name__ == "__main__":
     #     "ChatGPT_5_4_asserts",
     #     "Gemini_3_asserts",
     # ]
-    process_dataset(input_csv, assert_columns, output_csv)
+
+    if Path(output_csv).is_file():
+        print(f"Delete {output_csv} before starting.")
+    else:
+        process_dataset(input_csv, assert_columns, output_csv)
