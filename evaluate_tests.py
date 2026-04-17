@@ -700,7 +700,7 @@ def first_main():
 
 
 if __name__ == "__main__":
-    # Test 1 settings
+    # Test 1 settings (includes case study 1 and 2 data)
     input_csv = "Data/case_study_1/Test_1_data.csv"
     output_csv = "Data/case_study_1/Test_1_results.csv"
     assert_columns = [
